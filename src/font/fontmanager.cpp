@@ -56,7 +56,6 @@ void FontManager::initialize() {
 }
 
 void FontManager::deinitialize() {
-    _fontPaths.clear();
     _fonts.clear();
 
     _textureAtlas.deinitialize();
