@@ -133,6 +133,12 @@ public:
     std::shared_ptr<Font> font(unsigned int hashName, float fontSize,
         Outline withOutline = Outline::Yes, LoadGlyphs loadGlyphs = LoadGlyphs::Yes);
 
+    /**
+     * Provides access to the texture atlas to be able to, for example, query how filled
+     * it is.
+     */
+    const ghoul::opengl::TextureAtlas& textureAtlas() const;
+
 private:
     FontManager(const FontManager& rhs) = delete;
     FontManager(FontManager&& rhs) = delete;

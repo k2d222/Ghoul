@@ -56,6 +56,9 @@ void FontManager::initialize() {
 }
 
 void FontManager::deinitialize() {
+    _fontPaths.clear();
+    _fonts.clear();
+
     _textureAtlas.deinitialize();
 }
 
@@ -155,6 +158,10 @@ std::shared_ptr<Font> FontManager::font(unsigned int hashName, float fontSize,
 
     _fonts.emplace(hashName, f);
     return f;
+}
+
+const ghoul::opengl::TextureAtlas& FontManager::textureAtlas() const {
+    return _textureAtlas;
 }
 
 } // namespace ghoul::fontrendering
