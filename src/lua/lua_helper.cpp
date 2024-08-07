@@ -337,7 +337,8 @@ void loadArrayDictionaryFromString(const std::string& script, Dictionary& dictio
 
     const int callStatus = lua_pcall(state, 0, LUA_MULTRET, 0);
     if (callStatus != LUA_OK) {
-        throw LuaExecutionException(lua_tostring(state, -1));
+      const char* err = lua_tostring(state, -1); // err can be NULL if the stack is empty
+      throw LuaExecutionException(err ? err : "");
     }
 
     luaArrayDictionaryFromState(state, dictionary);
@@ -379,7 +380,7 @@ void luaDictionaryFromState(lua_State* state, Dictionary& dictionary,
     }
     const int topType = lua_type(state, size);
     if (topType == LUA_TNIL) {
-        // There was no able specified, so we can return an empty Dictionary to the caller
+        // There was no table specified, so we can return an empty Dictionary to the caller
         dictionary = ghoul::Dictionary();
         return;
     }
