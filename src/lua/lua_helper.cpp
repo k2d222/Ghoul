@@ -3,7 +3,7 @@
  * GHOUL                                                                                 *
  * General Helpful Open Utility Library                                                  *
  *                                                                                       *
- * Copyright (c) 2012-2024                                                               *
+ * Copyright (c) 2012-2025                                                               *
  *                                                                                       *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this  *
  * software and associated documentation files (the "Software"), to deal in the Software *
@@ -106,6 +106,19 @@ end
 is_declared = function(a)
   return mt.__declared[a] and what() ~= "C";
 end)";
+
+// Code snippet that sandboxes the state by removing ways to directly affect the outside
+// world
+constexpr std::string_view SandboxedStateSourceBase = R"(
+-- Remove the function that can be used to load additional modules
+require = nil
+)";
+
+constexpr std::string_view SandboxedStateSourceLibrary = R"(
+io = nil
+os = nil
+package = nil
+)";
 
 } // namespace
 
@@ -395,20 +408,26 @@ void luaDictionaryFromState(lua_State* state, Dictionary& dictionary,
         const int keyType = lua_type(state, KeyTableIndex);
         switch (keyType) {
             case LUA_TNUMBER:
+                key = std::to_string(lua_tointeger(state, KeyTableIndex));
+
                 if (type == TableType::Map) {
-                    throw LuaFormatException(
-                        "Dictionary can only contain a pure map or a pure array"
-                    );
+                    throw LuaFormatException(std::format(
+                        "Dictionary can only contain a pure map or a pure array. Error "
+                        "at key '{}'", key
+                    ));
                 }
 
                 type = TableType::Array;
                 key = std::to_string(lua_tointeger(state, KeyTableIndex));
                 break;
             case LUA_TSTRING:
+                key = lua_tostring(state, KeyTableIndex);
+
                 if (type == TableType::Array) {
-                    throw LuaFormatException(
-                        "Dictionary can only contain a pure map or a pure array"
-                    );
+                    throw LuaFormatException(std::format(
+                        "Dictionary can only contain a pure map or a pure array. Error "
+                        "at key '{}'", key
+                    ));
                 }
 
                 type = TableType::Map;
@@ -445,6 +464,21 @@ void luaDictionaryFromState(lua_State* state, Dictionary& dictionary,
             case LUA_TUSERDATA: {
                 void* data = lua_touserdata(state, ValueTableIndex);
                 dictionary.setValue(key, data);
+                break;
+            }
+            case LUA_TFUNCTION: {
+                auto writer = [](lua_State*, const void* p, size_t sz, void* user) {
+                    std::string* buffer = reinterpret_cast<std::string*>(user);
+                    const size_t tail = buffer->size();
+                    buffer->resize(buffer->size() + sz);
+                    std::memcpy(buffer->data() + tail, p, sz);
+                    return 0;
+                };
+
+                std::string buffer;
+                const int StripCode = 1;
+                lua_dump(state, writer, &buffer, StripCode);
+                dictionary.setValue(key, buffer);
                 break;
             }
             default:
@@ -501,23 +535,28 @@ void luaArrayDictionaryFromState(lua_State* state, Dictionary& dictionary) {
     }
 }
 
-std::string_view luaTypeToString(int type) {
+std::string_view luaTypeToString(LuaTypes type) {
     switch (type) {
-        case LUA_TNONE:          return "None";
-        case LUA_TNIL:           return "Nil";
-        case LUA_TBOOLEAN:       return "Boolean";
-        case LUA_TLIGHTUSERDATA: return "Light UserData";
-        case LUA_TNUMBER:        return "Number";
-        case LUA_TSTRING:        return "String";
-        case LUA_TTABLE:         return "Table";
-        case LUA_TFUNCTION:      return "Function";
-        case LUA_TUSERDATA:      return "UserData";
-        case LUA_TTHREAD:        return "Thread";
-        default:                 throw MissingCaseException();
+        case LuaTypes::None:          return "None";
+        case LuaTypes::Nil:           return "Nil";
+        case LuaTypes::Boolean:       return "Boolean";
+        case LuaTypes::LightUserData: return "Light UserData";
+        case LuaTypes::Number:        return "Number";
+        case LuaTypes::String:        return "String";
+        case LuaTypes::Table:         return "Table";
+        case LuaTypes::Function:      return "Function";
+        case LuaTypes::UserData:      return "UserData";
+        case LuaTypes::Thread:        return "Thread";
+        default:                      throw std::logic_error("Lua only has 9 types");
     }
 }
 
-lua_State* createNewLuaState(bool loadStandardLibraries, bool strictState) {
+std::string_view luaTypeToString(int type) {
+    return luaTypeToString(fromLuaType(type));
+}
+
+lua_State* createNewLuaState(bool sandboxed, bool loadStandardLibraries, bool strictState)
+{
     LDEBUGC("Lua", "Creating Lua state");
     lua_State* s = luaL_newstate();
     if (!s) {
@@ -540,6 +579,13 @@ lua_State* createNewLuaState(bool loadStandardLibraries, bool strictState) {
     if (strictState) {
         LDEBUGC("Lua", "Registering strict code");
         runScript(s, StrictStateSource);
+    }
+    if (sandboxed) {
+        LDEBUGC("Lua", "Sandboxing Lua state");
+        runScript(s, SandboxedStateSourceBase);
+        if (loadStandardLibraries || strictState) {
+            runScript(s, SandboxedStateSourceLibrary);
+        }
     }
     return s;
 }
@@ -571,26 +617,21 @@ void runScriptFile(lua_State* state, const std::filesystem::path& filename) {
     }
 }
 
-void runScript(lua_State* state, const std::string& script) {
+void runScript(lua_State* state, std::string_view script) {
     ghoul_assert(state, "State must not be nullptr");
     ghoul_assert(!script.empty(), "Script must not be empty");
 
-    const int loadStatus = luaL_loadstring(state, script.c_str());
-    if (loadStatus != LUA_OK) {
+    const int load = luaL_loadbuffer(state, script.data(), script.size(), script.data());
+    if (load != LUA_OK) {
         std::string error = lua_tostring(state, -1);
         throw LuaLoadingException(std::move(error));
     }
 
-    const int callStatus = lua_pcall(state, 0, LUA_MULTRET, 0);
-    if (callStatus != LUA_OK) {
+    const int call = lua_pcall(state, 0, LUA_MULTRET, 0);
+    if (call != LUA_OK) {
         std::string error = lua_tostring(state, -1);
         throw LuaExecutionException(std::move(error));
     }
-}
-
-void runScript(lua_State* state, std::string_view script) {
-    const std::string s = std::string(script);
-    runScript(state, s);
 }
 
 int checkArgumentsAndThrow(lua_State* L, int expected, const char* component) {
@@ -664,6 +705,11 @@ void verifyStackSize(lua_State* L, int expected) {
             "Incorrect number of items left on stack. Expected {} got {}", expected, size
         )
     );
+}
+
+bool isScriptBinary(std::string_view script) {
+    // A script is a binary if it's not empty and it doesn't start with `\x1b`
+    return !script.empty() && script[0] == '\x1b';
 }
 
 namespace internal {

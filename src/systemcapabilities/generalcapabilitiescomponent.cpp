@@ -3,7 +3,7 @@
  * GHOUL                                                                                 *
  * General Helpful Open Utility Library                                                  *
  *                                                                                       *
- * Copyright (c) 2012-2024                                                               *
+ * Copyright (c) 2012-2025                                                               *
  *                                                                                       *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this  *
  * software and associated documentation files (the "Software"), to deal in the Software *
@@ -26,6 +26,7 @@
 #include <ghoul/systemcapabilities/generalcapabilitiescomponent.h>
 
 #include <ghoul/format.h>
+#include <ghoul/logging/logmanager.h>
 #include <ghoul/misc/assert.h>
 #include <algorithm>
 #include <array>
@@ -342,20 +343,20 @@ void GeneralCapabilitiesComponent::detectOS() {
 
 void GeneralCapabilitiesComponent::detectMemory() {
 #ifdef WIN32
-    std::string memory;
     try {
+        std::string memory;
+        // This function might fail if the process has insufficient priviledges to access
+        // the WMI on Windows
         queryWMI("Win32_ComputerSystem", "TotalPhysicalMemory", memory);
+        std::stringstream convert;
+        convert << memory;
+        unsigned long long value;
+        convert >> value;
+        _installedMainMemory = static_cast<unsigned int>((value / 1024) / 1024);
     }
-    catch (const WMIError& e) {
-        throw MainMemoryError(std::format(
-            "Error reading physical memory from WMI. {} ({})", e.message, e.errorCode
-        ));
+    catch (const std::runtime_error& e) {
+        LWARNINGC("GeneralCapabilitiesComponent", e.what());
     }
-    std::stringstream convert;
-    convert << memory;
-    unsigned long long value;
-    convert >> value;
-    _installedMainMemory = static_cast<unsigned int>((value / 1024) / 1024);
 #elif defined(__APPLE__)
     int mib[2] = { CTL_HW, HW_MEMSIZE };
     size_t len;
@@ -585,7 +586,7 @@ void GeneralCapabilitiesComponent::detectCPU() {
 
     file = fopen("/sys/devices/system/cpu/cpu0/cache/index0/coherency_line_size", "r");
     if (file) {
-        if (fgets(line, maxSize, file) != nullptr){
+        if (fgets(line, maxSize, file) != nullptr) {
             _cacheLineSize = static_cast<unsigned int>(strtol(line, nullptr, 0));
         }
         fclose(file);
@@ -593,7 +594,7 @@ void GeneralCapabilitiesComponent::detectCPU() {
 
     file = fopen("/sys/devices/system/cpu/cpu0/cache/index0/ways_of_associativity", "r");
     if (file) {
-        if (fgets(line, maxSize, file) != nullptr){
+        if (fgets(line, maxSize, file) != nullptr) {
             _L2Associativity = static_cast<unsigned int>(strtol(line, nullptr, 0));
         }
         fclose(file);

@@ -3,7 +3,7 @@
  * GHOUL                                                                                 *
  * General Helpful Open Utility Library                                                  *
  *                                                                                       *
- * Copyright (c) 2012-2024                                                               *
+ * Copyright (c) 2012-2025                                                               *
  *                                                                                       *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this  *
  * software and associated documentation files (the "Software"), to deal in the Software *
@@ -64,7 +64,14 @@ void OpenGLCapabilitiesComponent::detectCapabilities() {
     detectGPUVendor();
     detectGLRenderer();
     detectExtensions();
-    detectDriverInformation();
+    try {
+        // This function might fail if the process has insufficient priviledges to access
+        // the WMI on Windows
+        detectDriverInformation();
+    }
+    catch (const std::runtime_error& e) {
+        LWARNINGC("OpenGLCapabilitiesComponent", e.what());
+    }
 
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, &_maxTextureSize);
     glGetIntegerv(GL_MAX_3D_TEXTURE_SIZE, &_maxTextureSize3D);

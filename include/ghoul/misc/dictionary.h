@@ -3,7 +3,7 @@
  * GHOUL                                                                                 *
  * General Helpful Open Utility Library                                                  *
  *                                                                                       *
- * Copyright (c) 2012-2024                                                               *
+ * Copyright (c) 2012-2025                                                               *
  *                                                                                       *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this  *
  * software and associated documentation files (the "Software"), to deal in the Software *
@@ -27,7 +27,6 @@
 #define __GHOUL___DICTIONARY___H__
 
 #include <ghoul/glm.h>
-#include <ghoul/misc/exception.h>
 #include <filesystem>
 #include <map>
 #include <string>
@@ -83,18 +82,6 @@ public:
         glm::dmat3x2, glm::dmat3x3, glm::dmat3x4, glm::dmat4x2, glm::dmat4x3, glm::dmat4x4
     >;
 
-    /// Exception that is thrown if the Dictionary does not contain a provided key
-    struct KeyError : public ghoul::RuntimeError {
-        explicit KeyError(std::string msg);
-    };
-
-    /// Exception thrown if there was an error with a value, either trying to access the
-    /// wrong type for a known key or if trying to access a vector/matrix based type and
-    /// the underlying std::vector did contain the wrong number of values
-    struct ValueError : public ghoul::RuntimeError {
-        explicit ValueError(std::string key, std::string msg);
-    };
-
     bool operator==(const Dictionary& rhs) const noexcept;
     bool operator!=(const Dictionary& rhs) const noexcept;
 
@@ -111,9 +98,6 @@ public:
      */
     template <SupportedByDictionary T>
     void setValue(std::string key, T value);
-
-    /// \overload void setValue(std::string key, T value)
-    //void setValue(std::string key, const char value[]);
 
     /**
      * Retrieves the value stored at the provided \p key. The template parameter has to be

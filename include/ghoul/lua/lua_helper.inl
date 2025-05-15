@@ -3,7 +3,7 @@
  * GHOUL                                                                                 *
  * General Helpful Open Utility Library                                                  *
  *                                                                                       *
- * Copyright (c) 2012-2024                                                               *
+ * Copyright (c) 2012-2025                                                               *
  *                                                                                       *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this  *
  * software and associated documentation files (the "Software"), to deal in the Software *
@@ -862,7 +862,7 @@ T valueInner(lua_State* L, int location) {
         defer { lua_pop(L, 1); };
 
         ghoul::Dictionary d = ghoul::lua::luaDictionaryFromState(L);
-        T res = dictionaryToVector<typename T::value_type>(d);
+        T res = dictionaryToVector<typename T::value_type, true>(d);
         return res;
     }
     else if constexpr (is_array<T>::value) {
@@ -926,16 +926,16 @@ bool hasValue(lua_State* L, int location) {
         return lua_isboolean(L, location);
     }
     else if constexpr (std::is_same_v<T, lua_Number>) {
-        return lua_isnumber(L, location);
+        return lua_isnumber(L, location) == 1;
     }
     else if constexpr (std::is_same_v<T, lua_Integer>) {
-        return lua_isinteger(L, location);
+        return lua_isinteger(L, location) == 1;
     }
     else if constexpr (std::is_integral_v<T>) {
-        return lua_isinteger(L, location);
+        return lua_isinteger(L, location) == 1;
     }
     else if constexpr (std::is_floating_point_v<T>) {
-        return lua_isnumber(L, location);
+        return lua_isnumber(L, location) == 1;
     }
     else if constexpr (std::is_same_v<T, const char*> || std::is_same_v<T, std::string> ||
                        std::is_same_v<T, std::filesystem::path> ||
@@ -944,7 +944,7 @@ bool hasValue(lua_State* L, int location) {
         return lua_type(L, location) == LUA_TSTRING;
     }
     else if constexpr (std::is_pointer_v<T>) {
-        return lua_isuserdata(L, location);
+        return lua_isuserdata(L, location) == 1;
     }
     else if constexpr (std::is_same_v<T, ghoul::Dictionary> ||
                        internal::is_string_map<T>::value ||
@@ -976,7 +976,7 @@ bool hasValue(lua_State* L, int location) {
                        std::is_same_v<T, glm::mat4x3> ||
                        std::is_same_v<T, glm::mat4x4>)
     {
-        return lua_istable(L, location);
+        return lua_istable(L, location) == 1;
     }
     else if constexpr (internal::is_variant<T>::value) {
         return internal::hasVariantValue<0, T>(L, location);

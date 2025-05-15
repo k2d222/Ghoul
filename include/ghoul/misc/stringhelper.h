@@ -3,7 +3,7 @@
  * GHOUL                                                                                 *
  * General Helpful Open Utility Library                                                  *
  *                                                                                       *
- * Copyright (c) 2012-2024                                                               *
+ * Copyright (c) 2012-2025                                                               *
  *                                                                                       *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this  *
  * software and associated documentation files (the "Software"), to deal in the Software *
@@ -62,7 +62,7 @@ std::vector<std::string> tokenizeString(const std::string& input, char separator
 
 /**
  * Joins the strings located in the \p input using the provided \p separator and returns
- * the joined list.
+ * the joined list. If the provided \p input is empty, the empty string is returned.
  *
  * \param input The list of strings that will be joined
  * \param separator The separator that will be used in the joined string
@@ -111,7 +111,7 @@ std::string encodeUrl(const std::string& string);
 
 /**
  * Provides a platform-independent version of std::getline by ensuring that no newline
- * character ('\n' or '\r') will remain at the end of the line that is read from a
+ * character ('\\n' or '\\r') will remain at the end of the line that is read from a
  * std::isstream which may or may not have windows-style line endings.
  *
  * \param inputStream The isstream object from to read the next line at current location
@@ -122,12 +122,12 @@ std::istream& getline(std::istream& inputStream, std::string& str);
 
 /**
  * Provides a platform-independent version of std::getline by ensuring that no newline
- * character ('\n' or '\r') will remain at the end of the line that is read from a
+ * character ('\\n' or '\\r') will remain at the end of the line that is read from a
  * std::isstream which may or may not have windows-style line endings.
  *
  * \param inputStream The isstream object from to read the next line at current location
  * \param str The line that is read from the stream is stored in this string
- * \param char The delimiter to be used to stop a line read
+ * \param delim The delimiter to be used to stop a line read
  * \return The same as parameter inputStream
  */
 std::istream& getline(std::istream& inputStream, std::string& str, char delim);

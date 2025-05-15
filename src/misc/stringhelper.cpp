@@ -3,7 +3,7 @@
  * GHOUL                                                                                 *
  * General Helpful Open Utility Library                                                  *
  *                                                                                       *
- * Copyright (c) 2012-2024                                                               *
+ * Copyright (c) 2012-2025                                                               *
  *                                                                                       *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this  *
  * software and associated documentation files (the "Software"), to deal in the Software *
@@ -73,6 +73,10 @@ std::vector<std::string> tokenizeString(const std::string& input, char separator
 }
 
 std::string join(std::vector<std::string> input, const std::string& separator) {
+    if (input.empty()) {
+        return std::string();
+    }
+
     std::string result;
     for (std::string& s : input) {
         result += std::move(s) + separator;

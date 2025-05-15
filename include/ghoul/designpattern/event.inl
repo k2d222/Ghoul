@@ -3,7 +3,7 @@
  * GHOUL                                                                                 *
  * General Helpful Open Utility Library                                                  *
  *                                                                                       *
- * Copyright (c) 2012-2024                                                               *
+ * Copyright (c) 2012-2025                                                               *
  *                                                                                       *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this  *
  * software and associated documentation files (the "Software"), to deal in the Software *
@@ -77,7 +77,7 @@ void Event<T...>::unsubscribe(const std::string& name) {
             std::remove_if(
                 topic.second.begin(), topic.second.end(),
                 // predicate function, true if subscriber name is equal to given name
-                [name](const Subscriber& subscriber){
+                [name](const Subscriber& subscriber) {
                     return (subscriber.name == name);
                 }
             ),

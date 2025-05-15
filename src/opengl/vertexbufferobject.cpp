@@ -3,7 +3,7 @@
  * GHOUL                                                                                 *
  * General Helpful Open Utility Library                                                  *
  *                                                                                       *
- * Copyright (c) 2012-2024                                                               *
+ * Copyright (c) 2012-2025                                                               *
  *                                                                                       *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this  *
  * software and associated documentation files (the "Software"), to deal in the Software *
@@ -105,6 +105,7 @@ void VertexBufferObject::vertexAttribPointer(GLuint index, GLint size, GLenum ty
                                              GLsizei stride, GLuint offset,
                                              GLboolean normalized) const
 {
+    uint64_t o = offset;
     glBindVertexArray(_vaoID);
     glEnableVertexAttribArray(index);
     glVertexAttribPointer(
@@ -113,7 +114,7 @@ void VertexBufferObject::vertexAttribPointer(GLuint index, GLint size, GLenum ty
         type,
         normalized,
         stride,
-        reinterpret_cast<const GLvoid*>(offset)
+        reinterpret_cast<const GLvoid*>(&o)
     );
     glBindVertexArray(0);
 }

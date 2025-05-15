@@ -3,7 +3,7 @@
  * GHOUL                                                                                 *
  * General Helpful Open Utility Library                                                  *
  *                                                                                       *
- * Copyright (c) 2012-2024                                                               *
+ * Copyright (c) 2012-2025                                                               *
  *                                                                                       *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this  *
  * software and associated documentation files (the "Software"), to deal in the Software *
@@ -285,13 +285,13 @@ void ShaderPreprocessor::includeFile(const std::filesystem::path& path,
         }
     }
 
-    std::ifstream stream(path);
+    std::ifstream stream = std::ifstream(path, std::ifstream::binary);
     if (!stream.good()) {
         throw ghoul::RuntimeError(std::format("Error loading include file '{}'", path));
     }
     ghoul_assert(stream.good() , "Input stream is not good");
 
-    ghoul::filesystem::File file(path);
+    ghoul::filesystem::File file = ghoul::filesystem::File(path);
 
     const std::string prevIndent =
         !environment.inputs.empty() ? environment.inputs.back().indentation : "";

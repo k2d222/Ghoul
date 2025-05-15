@@ -3,7 +3,7 @@
  * GHOUL                                                                                 *
  * General Helpful Open Utility Library                                                  *
  *                                                                                       *
- * Copyright (c) 2012-2024                                                               *
+ * Copyright (c) 2012-2025                                                               *
  *                                                                                       *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this  *
  * software and associated documentation files (the "Software"), to deal in the Software *
@@ -180,6 +180,10 @@ public:
      */
     void triggerFilesystemEvents();
 
+#ifdef WIN32
+    std::filesystem::path resolveShellLink(std::filesystem::path path);
+#endif // WIN32
+
 private:
     /**
      * Constructs a FileSystem object.
@@ -288,7 +292,43 @@ private:
 
 #define FileSys (ghoul::filesystem::FileSystem::ref())
 
+BooleanType(Recursive);
+BooleanType(Sorted);
+
+/**
+ * Walks the provided directory in \p path and returns a path of all contained files. If
+ * \p recursive is `true`, any directory encountered will be recursively walked and if
+ * \p sorted is `true`, the returning vector alphabetically sorted. The \p filter
+ * determines for each encountered path whether it should be included or not. If no
+ * \p filter is provided all provided paths wil be accepted.
+ *
+ * \param path The directory that should be walked
+ * \param recursive If this value is set to `true`, then any directory will be recursively
+ *        walked and all files will be provided in a single list
+ * \param sorted If this value is `true`, the resulting list will be alphabetically
+ *        sorted. If it is `false`, the list will be returned in the order as the
+ *        operating system determines
+ * \param filter This filter function will be executed for each encounted path, both files
+ *        and directories (if \p recursive is `true`). If the filter function returns
+ *        `false` for a path, it will not be included in the final list, if it was a file,
+ *        and its contents will not be considered, if it was a directory.
+ *
+ * \pre \p path must be a valid and existing directory
+ */
+std::vector<std::filesystem::path> walkDirectory(const std::filesystem::path& path,
+    Recursive recursive = Recursive::No, Sorted sorted = Sorted::No,
+    std::function<bool(const std::filesystem::path&)> filter =
+        [](const std::filesystem::path&) { return true; });
+
+/**
+ * Checks whether \p root is a direct parent of \p p.
+ *
+ * \return `true` if \p root is a direct parent of \p p. `false` otherwise.
+ */
+bool isSubdirectory(std::filesystem::path p, std::filesystem::path root);
+
 } // namespace ghoul::filesystem
+
 
 /**
  * Returns the absolute path to the passed \p path, resolving any tokens (if present) in

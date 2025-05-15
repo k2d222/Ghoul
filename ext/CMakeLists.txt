@@ -3,7 +3,7 @@
 # GHOUL                                                                                  #
 # General Helpful Open Utility Library                                                   #
 #                                                                                        #
-# Copyright (c) 2012-2024                                                                #
+# Copyright (c) 2012-2025                                                                #
 #                                                                                        #
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this   #
 # software and associated documentation files (the "Software"), to deal in the Software  #
@@ -55,13 +55,15 @@ message(STATUS "Including GLM found at ${GLM_INCLUDE_DIRS}")
 target_include_directories(Ghoul SYSTEM PUBLIC ${GLM_INCLUDE_DIRS})
 end_dependency("GLM")
 
-add_subdirectory(catch2)
-# Catch2 by default compiles with C++14, which leads to some linker errors:
-# https://github.com/catchorg/Catch2/issues/2046
-target_compile_features(Catch2 PUBLIC cxx_std_20)
-target_compile_features(Catch2WithMain PUBLIC cxx_std_20)
-set_target_properties(Catch2 PROPERTIES FOLDER External)
-set_target_properties(Catch2WithMain PROPERTIES FOLDER External)
+if (GHOUL_HAVE_TESTS)
+  add_subdirectory(catch2)
+  # Catch2 by default compiles with C++14, which leads to some linker errors:
+  # https://github.com/catchorg/Catch2/issues/2046
+  target_compile_features(Catch2 PUBLIC cxx_std_20)
+  target_compile_features(Catch2WithMain PUBLIC cxx_std_20)
+  set_target_properties(Catch2 PROPERTIES FOLDER External)
+  set_target_properties(Catch2WithMain PROPERTIES FOLDER External)
+endif()
 
 if (GHOUL_MODULE_OPENGL)
   begin_module("OpenGL")
@@ -189,7 +191,6 @@ begin_dependency("scnlib")
 add_subdirectory(scnlib SYSTEM)
 target_link_libraries(Ghoul PUBLIC scn)
 set_target_properties(scn PROPERTIES FOLDER "External")
-set_target_properties(simdutf PROPERTIES FOLDER "External")
 end_dependency("scnlib")
 
 # stb_image
@@ -255,6 +256,7 @@ endif ()
 
 # Tiny process library
 begin_dependency("tiny-process-library")
+set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
 add_subdirectory(tiny-process-library)
 target_link_libraries(Ghoul PRIVATE tiny-process-library)
 set_target_properties(tiny-process-library PROPERTIES FOLDER "External")

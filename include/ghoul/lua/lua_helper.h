@@ -3,7 +3,7 @@
  * GHOUL                                                                                 *
  * General Helpful Open Utility Library                                                  *
  *                                                                                       *
- * Copyright (c) 2012-2024                                                               *
+ * Copyright (c) 2012-2025                                                               *
  *                                                                                       *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this  *
  * software and associated documentation files (the "Software"), to deal in the Software *
@@ -26,6 +26,7 @@
 #ifndef __GHOUL___LUA_HELPER___H__
 #define __GHOUL___LUA_HELPER___H__
 
+#include <ghoul/lua/lua_types.h>
 #include <ghoul/misc/boolean.h>
 #include <ghoul/misc/exception.h>
 #include <filesystem>
@@ -67,7 +68,6 @@ struct LuaExecutionException : public LuaRuntimeException {
 struct nil_t {};
 
 BooleanType(PopValue);
-
 
 /**
  * Returns the location of the calling function using `luaL_where` and returns
@@ -356,9 +356,14 @@ void luaArrayDictionaryFromState(lua_State* state, ghoul::Dictionary& dictionary
  */
 std::string_view luaTypeToString(int type);
 
+std::string_view luaTypeToString(LuaTypes type);
+
 /**
  * Creates a new Lua state and initializes it with the default Lua libraries.
  *
+ * \param sandboxed If this is `true`, then all of the functions that might pose
+ *        potential security risks are removed from the state. This includes functions to
+ *        load third-party modules or access the file system
  * \param loadStandardLibraries If `true`, the Lua standard libraries will be loaded into
  *        the newly created state by means of a `luaL_openlibs` call
  * \param strictState If this is `true`, the created Lua state will panic if an unused
@@ -367,7 +372,8 @@ std::string_view luaTypeToString(int type);
  *
  * \throw LuaRuntimeException If there was an error creating the new Lua state
  */
-lua_State* createNewLuaState(bool loadStandardLibraries = true, bool strictState = false);
+lua_State* createNewLuaState(bool sandboxed = true, bool loadStandardLibraries = true,
+    bool strictState = false);
 
 /**
  * Destroys the passed lua state and frees all memory that is associated with it.
@@ -393,18 +399,6 @@ void destroyLuaState(lua_State* state);
  * \pre \p filename must be a file that exist
  */
 void runScriptFile(lua_State* state, const std::filesystem::path& filename);
-
-/**
- * This function executes the Lua script provided as plain text in \p script using the
- * passed `lua_State` \p state.
- *
- * \throw LuaLoadingException If there was an error loading the script
- * \throw LuaExecutionError If there was an error executing the script
- *
- * \pre \p state must not be nullptr
- * \pre \p script must not be empty
- */
-void runScript(lua_State* state, const std::string& script);
 
 /**
  * This function executes the Lua script provided as plain text in \p script using the
@@ -488,6 +482,18 @@ int checkArgumentsAndThrow(lua_State* L, int expected, std::pair<int, int> range
  * \param expected The expected number of items on the stack
  */
 void verifyStackSize(lua_State* L, int expected = 0);
+
+/**
+ * Returns whether the provided \p script is a binary blob or not. If the \p script is not
+ * a binary blob, it is a potentially null-terminated string. If it is a binary blob, the
+ * string might contain null-terminated characters within and shouldn't be used as an
+ * `std::string`. Passing binary or non-binary scripts to the #runScript function will
+ * both work as expected.
+ *
+ * \param script The script that should be tested whether it is a binary blob or not
+ * \return `true` if the \p script is binary, `false` otherwise
+ */
+bool isScriptBinary(std::string_view script);
 
 /**
  * Checks whether a value of the requested type exists at the provided location of the

@@ -3,7 +3,7 @@
  * GHOUL                                                                                 *
  * General Helpful Open Utility Library                                                  *
  *                                                                                       *
- * Copyright (c) 2012-2024                                                               *
+ * Copyright (c) 2012-2025                                                               *
  *                                                                                       *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this  *
  * software and associated documentation files (the "Software"), to deal in the Software *
@@ -23,7 +23,7 @@
  * OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                                         *
  ****************************************************************************************/
 
-#include "catch2/catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 #include <ghoul/misc/dictionary.h>
 #include <ghoul/misc/managedmemoryuniqueptr.h>
@@ -61,7 +61,7 @@ namespace {
         SubClassDefault() : BaseClass() {
             value1 = 1;
             value2 = 2;
-        };
+        }
     };
 
     struct SubClassDefault2 : public BaseClass {
@@ -81,7 +81,7 @@ namespace {
             if (dict.hasValue<int>("value2")) {
                 value2 = dict.value<int>("value2");
             }
-        };
+        }
     };
 
     struct SubClassDefaultDictionary : public BaseClass {
@@ -89,7 +89,7 @@ namespace {
         SubClassDefaultDictionary() : BaseClass() {
             value1 = 31;
             value2 = 32;
-        };
+        }
         explicit SubClassDefaultDictionary(const ghoul::Dictionary& dict) : BaseClass() {
             if (dict.hasValue<int>("value1")) {
                 value1 = dict.value<int>("value1");
@@ -97,11 +97,11 @@ namespace {
             if (dict.hasValue<int>("value2")) {
                 value2 = dict.value<int>("value2");
             }
-        };
+        }
     };
 
     struct SubClassMultipleLayers : public SubClassDefault {
-        SubClassMultipleLayers() {};
+        SubClassMultipleLayers() {}
     };
 
     struct FunctionPointerClass : public BaseClass {};

@@ -3,7 +3,7 @@
  * GHOUL                                                                                 *
  * General Helpful Open Utility Library                                                  *
  *                                                                                       *
- * Copyright (c) 2012-2024                                                               *
+ * Copyright (c) 2012-2025                                                               *
  *                                                                                       *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this  *
  * software and associated documentation files (the "Software"), to deal in the Software *
@@ -36,9 +36,6 @@
 #ifndef _ERRNO
 #define _ERRNO WSAGetLastError()
 #endif
-
-#pragma warning(push)
-#pragma warning (disable : 4996)
 #else //Use BSD sockets
 #ifdef _XCODE
 #include <unistd.h>

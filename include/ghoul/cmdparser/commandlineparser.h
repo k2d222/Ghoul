@@ -3,7 +3,7 @@
  * GHOUL                                                                                 *
  * General Helpful Open Utility Library                                                  *
  *                                                                                       *
- * Copyright (c) 2012-2024                                                               *
+ * Copyright (c) 2012-2025                                                               *
  *                                                                                       *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this  *
  * software and associated documentation files (the "Software"), to deal in the Software *
@@ -242,7 +242,7 @@ protected:
     std::vector<std::unique_ptr<CommandlineCommand>> _commands;
 
     /// The command we want to use for nameless arguments
-    std::unique_ptr<CommandlineCommand> _commandForNamelessArguments = nullptr;
+    std::unique_ptr<CommandlineCommand> _commandForNamelessArguments;
 
     /// All the arguments passed onto this parser
     std::vector<std::string> _arguments;

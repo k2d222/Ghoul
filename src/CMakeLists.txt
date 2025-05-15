@@ -3,7 +3,7 @@
 # GHOUL                                                                                  #
 # General Helpful Open Utility Library                                                   #
 #                                                                                        #
-# Copyright (c) 2012-2024                                                                #
+# Copyright (c) 2012-2025                                                                #
 #                                                                                        #
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this   #
 # software and associated documentation files (the "Software"), to deal in the Software  #
@@ -203,8 +203,10 @@ if (GHOUL_MODULE_LUA)
       ${PROJECT_SOURCE_DIR}/include/ghoul/lua/ghoul_lua.h
       ${PROJECT_SOURCE_DIR}/include/ghoul/lua/lua_helper.h
       ${PROJECT_SOURCE_DIR}/include/ghoul/lua/lua_helper.inl
+      ${PROJECT_SOURCE_DIR}/include/ghoul/lua/lua_types.h
       ${PROJECT_SOURCE_DIR}/include/ghoul/lua/luastate.h
       lua/lua_helper.cpp
+      lua/lua_types.cpp
       lua/luastate.cpp
   )
 endif ()
@@ -239,6 +241,7 @@ if (GHOUL_MODULE_OPENGL)
       ${PROJECT_SOURCE_DIR}/include/ghoul/io/texture/texturereaderstb.h
       ${PROJECT_SOURCE_DIR}/include/ghoul/io/texture/texturewriter.h
       ${PROJECT_SOURCE_DIR}/include/ghoul/io/texture/texturewriterbase.h
+      ${PROJECT_SOURCE_DIR}/include/ghoul/io/texture/texturewriterstb.h
       opengl/bufferbinding.cpp
       opengl/debugcontext.cpp
       opengl/framebufferobject.cpp
@@ -260,6 +263,7 @@ if (GHOUL_MODULE_OPENGL)
       io/texture/texturereaderstb.cpp
       io/texture/texturewriter.cpp
       io/texture/texturewriterbase.cpp
+      io/texture/texturewriterstb.cpp
   )
 endif ()
 

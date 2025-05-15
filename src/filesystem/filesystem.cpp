@@ -3,7 +3,7 @@
  * GHOUL                                                                                 *
  * General Helpful Open Utility Library                                                  *
  *                                                                                       *
- * Copyright (c) 2012-2024                                                               *
+ * Copyright (c) 2012-2025                                                               *
  *                                                                                       *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this  *
  * software and associated documentation files (the "Software"), to deal in the Software *
@@ -27,12 +27,13 @@
 
 #include <ghoul/filesystem/cachemanager.h>
 #include <ghoul/logging/logmanager.h>
+#include <ghoul/misc/defer.h>
 #include <ghoul/misc/profiling.h>
 
 #ifdef WIN32
-#include <direct.h>
-#include <Shlwapi.h>
 #include <Windows.h>
+#include <ShObjIdl.h>
+#include <ShlGuid.h>
 #else
 #include <cerrno>
 #include <cstring>
@@ -242,6 +243,114 @@ void FileSystem::triggerFilesystemEvents() {
     // Sleeping for 0 milliseconds will trigger any pending asynchronous procedure calls
     SleepEx(0, TRUE);
 #endif
+}
+
+
+#ifdef WIN32
+std::filesystem::path FileSystem::resolveShellLink(std::filesystem::path path) {
+    IShellLink* psl = nullptr;
+    HRESULT hres = CoCreateInstance(
+        CLSID_ShellLink,
+        nullptr,
+        CLSCTX_INPROC_SERVER,
+        IID_IShellLink,
+        reinterpret_cast<LPVOID*>(&psl)
+    );
+    if (FAILED(hres)) {
+        throw ghoul::RuntimeError(std::format(
+            "Failed initializing ShellLink when resolving path '{}' with error: {}",
+            path, hres
+        ));
+    }
+    defer { psl->Release(); };
+
+    IPersistFile* ppf = nullptr;
+    hres = psl->QueryInterface(IID_IPersistFile, reinterpret_cast<void**>(&ppf));
+    if (FAILED(hres)) {
+        throw ghoul::RuntimeError(std::format(
+            "Failed querying interface when resolving path '{}' with error: {}",
+            path, hres
+        ));
+    }
+    defer{ ppf->Release(); };
+
+    WCHAR wsz[MAX_PATH];
+    std::string p = path.string();
+    int res = MultiByteToWideChar(CP_ACP, 0, p.c_str(), -1, wsz, MAX_PATH);
+    if (res == 0) {
+        DWORD error = GetLastError();
+        throw ghoul::RuntimeError(std::format(
+            "Failed converting path '{}' with error: {}", path, error
+        ));
+    }
+
+    hres = ppf->Load(wsz, STGM_READ);
+    if (FAILED(hres)) {
+        throw ghoul::RuntimeError(std::format(
+            "Failed loading ShellLink file at path '{}' with error: {}", path, hres
+        ));
+    }
+
+    hres = psl->Resolve(nullptr, 0);
+    if (FAILED(hres)) {
+        throw ghoul::RuntimeError(std::format(
+            "Failed to resolve ShellLink at path '{}' with error: {}", path, hres
+        ));
+    }
+
+    CHAR szGotPath[MAX_PATH];
+    WIN32_FIND_DATA wfd;
+    hres = psl->GetPath(szGotPath, MAX_PATH, &wfd, SLGP_SHORTPATH);
+    if (FAILED(hres)) {
+        throw ghoul::RuntimeError(std::format(
+            "Failed to get path of ShellLink at path '{}' with error: {}", path, hres
+        ));
+    }
+
+    std::string result = szGotPath;
+    return result;
+}
+#endif // WIN32
+
+std::vector<std::filesystem::path> walkDirectory(const std::filesystem::path& path,
+                                                 Recursive recursive, Sorted sorted,
+                                 std::function<bool(const std::filesystem::path&)> filter)
+{
+    ghoul_assert(std::filesystem::exists(path), "Path does not exist");
+    ghoul_assert(std::filesystem::is_directory(path), "Path is not a directory");
+
+    namespace fs = std::filesystem;
+    std::vector<std::filesystem::path> result;
+    if (fs::is_directory(path)) {
+        if (recursive) {
+            for (fs::directory_entry e : fs::recursive_directory_iterator(path)) {
+                if (filter(e)) {
+                    result.push_back(e.path());
+                }
+            }
+        }
+        else {
+            for (fs::directory_entry e : fs::directory_iterator(path)) {
+                if (filter(e)) {
+                    result.push_back(e.path());
+                }
+            }
+        }
+    }
+    if (sorted) {
+        std::sort(result.begin(), result.end());
+    }
+    return result;
+}
+
+bool isSubdirectory(std::filesystem::path p, std::filesystem::path root) {
+    while (p != p.parent_path()) {
+        if (p == root) {
+            return true;
+        }
+        p = p.parent_path();
+    }
+    return false;
 }
 
 } // namespace ghoul::filesystem
