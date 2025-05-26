@@ -33,8 +33,6 @@
 #include <ghoul/misc/dictionary.h>
 #include <ghoul/misc/stringhelper.h>
 #include <filesystem>
-#include <fstream>
-#include <sstream>
 
 namespace {
 
@@ -350,8 +348,8 @@ void loadArrayDictionaryFromString(const std::string& script, Dictionary& dictio
 
     const int callStatus = lua_pcall(state, 0, LUA_MULTRET, 0);
     if (callStatus != LUA_OK) {
-      const char* err = lua_tostring(state, -1); // err can be NULL if the stack is empty
-      throw LuaExecutionException(err ? err : "");
+      const char* error = lua_tostring(state, -1); // error can be NULL if the stack is empty
+      throw LuaExecutionException(error ? error : "");
     }
 
     luaArrayDictionaryFromState(state, dictionary);
@@ -629,7 +627,7 @@ void runScript(lua_State* state, std::string_view script) {
 
     const int call = lua_pcall(state, 0, LUA_MULTRET, 0);
     if (call != LUA_OK) {
-        std::string error = lua_tostring(state, -1);
+        std::string error = luaValueToString(state, -1);
         throw LuaExecutionException(std::move(error));
     }
 }
