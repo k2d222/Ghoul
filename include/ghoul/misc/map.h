@@ -23,56 +23,41 @@
  * OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                                         *
  ****************************************************************************************/
 
-#ifndef __GHOUL___TCPSOCKETSERVER___H__
-#define __GHOUL___TCPSOCKETSERVER___H__
+#ifndef __GHOUL___MAP___H__
+#define __GHOUL___MAP___H__
 
-#include <ghoul/io/socket/socketserver.h>
+#include <functional>
+#include <string>
+#include <string_view>
 
-#include <ghoul/io/socket/sockettype.h>
-#include <ghoul/io/socket/tcpsocket.h>
-#include <condition_variable>
-#include <deque>
-#include <mutex>
-#include <thread>
+// The contents of this file define `transparent_string_hash` which is a type that can be
+// used for unordered containers to make them capable of heterogeneous lookup. This
+// follows the implementatoin of P0917 and P1690 that hvae been added into C++20.
+//
+// To use this, you would defined a container like such:
+//
+// std::unordered_map<std::string, int, transparent_string_hash, std::equal_to<>> map;
+//
+// and it allows the lookup of string_view and char* in the map without the memory
+// allocation otherwise required
 
-namespace ghoul::io {
 
-class Socket;
-
-class TcpSocketServer : public SocketServer {
-public:
-    virtual ~TcpSocketServer() override;
-
-    int port() const override;
-    void close() override;
-    void listen(int port) override;
-    bool isListening() const override;
-
-    bool hasPendingSockets() const override;
-    std::unique_ptr<TcpSocket> nextPendingTcpSocket();
-    std::unique_ptr<Socket> nextPendingSocket() override;
-
-    // Blocking methods
-    std::unique_ptr<TcpSocket> awaitPendingTcpSocket();
-    std::unique_ptr<Socket> awaitPendingSocket() override;
-
-private:
-    void waitForConnections();
-
-    mutable std::mutex _settingsMutex;
-    int _port = 0;
-    bool _listening = false;
-
-    mutable std::mutex _connectionMutex;
-    std::deque<std::unique_ptr<TcpSocket>> _pendingConnections;
-
-    std::mutex _connectionNotificationMutex;
-    std::condition_variable _connectionNotifier;
-
-    std::unique_ptr<std::thread> _serverThread;
-    _SOCKET _serverSocket = 0;
+template <typename... Bases>
+struct overload : Bases ... {
+    using is_transparent = void;
+    using Bases::operator() ...;
 };
 
-} // namespace ghoul::io
+struct char_pointer_hash {
+    auto operator()(const char* ptr) const noexcept {
+        return std::hash<std::string_view>{}(ptr);
+    }
+};
 
-#endif // __GHOUL___TCPSOCKETSERVER___H__
+using transparent_string_hash = overload<
+    std::hash<std::string>,
+    std::hash<std::string_view>,
+    char_pointer_hash
+>;
+
+#endif // __GHOUL___MAP___H__

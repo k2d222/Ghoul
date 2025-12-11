@@ -25,6 +25,8 @@
 
 #include <ghoul/cmdparser/multiplecommand.h>
 
+#include <utility>
+
 namespace ghoul::cmdparser {
 
 MultipleCommandZeroArguments::MultipleCommandZeroArguments(int& nExecutions,
@@ -43,7 +45,7 @@ MultipleCommandZeroArguments::MultipleCommandZeroArguments(int& nExecutions,
 {}
 
 void MultipleCommandZeroArguments::execute(const std::vector<std::string>&) {
-    ++_ptr;
+    _ptr++;
 }
 
 } // namespace ghoul::cmdparser

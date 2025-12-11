@@ -26,27 +26,32 @@
 #ifndef __GHOUL___WEBSOCKET___H__
 #define __GHOUL___WEBSOCKET___H__
 
-#include <ghoul/io/socket/tcpsocket.h>
-
-#include <ghoul/misc/exception.h>
+#include <ghoul/io/socket/socket.h>
 
 #ifdef WIN32
 #pragma warning(push)
 #pragma warning(disable: 4244 4267)
 #endif // WIN32
 
+#include <websocketpp/common/connection_hdl.hpp>
 #include <websocketpp/config/core.hpp>
-#include <websocketpp/common/functional.hpp>
-#include <websocketpp/server.hpp>
+#include <websocketpp/endpoint.hpp>
+#include <websocketpp/roles/server_endpoint.hpp>
 
 #ifdef WIN32
 #pragma warning(pop)
 #endif // WIN32
+
+#include <condition_variable>
 #include <deque>
+#include <memory>
+#include <mutex>
 #include <set>
+#include <sstream>
 
 namespace ghoul::io {
 
+class TcpSocket;
 class WebSocketServerInternal;
 
 /**
@@ -58,10 +63,6 @@ class WebSocketServerInternal;
  */
 class WebSocket : public Socket {
 public:
-    struct WebSocketError : public ghoul::RuntimeError {
-        explicit WebSocketError(std::string msg, std::string comp = "");
-    };
-
     /**
      * WebSocket close event reason:
      * https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent
@@ -99,8 +100,10 @@ private:
     void onClose(const websocketpp::connection_hdl& hdl);
 
     std::mutex _connectionHandlesMutex;
-    std::set<websocketpp::connection_hdl, std::owner_less<websocketpp::connection_hdl>>
-        _connectionHandles;
+    std::set<
+        websocketpp::connection_hdl,
+        std::owner_less<websocketpp::connection_hdl>
+    > _connectionHandles;
 
     websocketpp::server<websocketpp::config::core>::connection_ptr _socketConnection;
 

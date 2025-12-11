@@ -25,8 +25,17 @@
 
 #ifdef WIN32
 
+#include <ghoul/format.h>
+#include <ghoul/filesystem/file.h>
 #include <ghoul/filesystem/filesystem.h>
 #include <ghoul/logging/logmanager.h>
+#include <ghoul/misc/exception.h>
+#include <cstdlib>
+#include <filesystem>
+#include <string>
+#include <string_view>
+#include <vector>
+#include <utility>
 #include <Windows.h>
 
 namespace {
@@ -82,9 +91,9 @@ int FileSystem::addFileListener(std::filesystem::path path,
 
         if (handle->_handle == INVALID_HANDLE_VALUE) {
             delete handle;
-            throw ghoul::RuntimeError(
-                std::format("Directory handle for '{}' could not be obtained", dir)
-            );
+            throw ghoul::RuntimeError(std::format(
+                "Directory handle for '{}' could not be obtained", dir
+            ));
         }
 
         _directories[dir] = handle;
@@ -141,7 +150,7 @@ void readStarter(DirectoryHandle* directoryHandle) {
     FileSys.beginRead(directoryHandle);
 }
 
-void CALLBACK completionHandler(DWORD, DWORD, LPOVERLAPPED lpOverlapped) {
+static void CALLBACK completionHandler(DWORD, DWORD, LPOVERLAPPED lpOverlapped) {
     DirectoryHandle* handle = static_cast<DirectoryHandle*>(lpOverlapped->hEvent);
 
     const unsigned char currentBuffer = handle->_activeBuffer;

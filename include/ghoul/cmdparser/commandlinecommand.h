@@ -28,7 +28,6 @@
 
 #include <ghoul/misc/boolean.h>
 #include <ghoul/misc/exception.h>
-#include <sstream>
 #include <string>
 #include <vector>
 
@@ -54,7 +53,7 @@ public:
      * Exception that gets thrown if an error occurs in the CommandlineCommand::execute
      * that could not be checked in the CommandlineCommand::checkParameters method
      */
-    struct CommandExecutionException : public RuntimeError {
+    struct CommandExecutionException final : public RuntimeError {
         explicit CommandExecutionException(std::string msg);
     };
 
@@ -62,7 +61,7 @@ public:
      * Exception that gets thrown if an error occurs in the
      * ComandlineCommand::checkParameters
      */
-    struct CommandParameterException : public RuntimeError {
+    struct CommandParameterException final : public RuntimeError {
         explicit CommandParameterException(std::string msg);
     };
 

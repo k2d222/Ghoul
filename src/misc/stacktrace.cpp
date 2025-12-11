@@ -24,8 +24,6 @@
  *****************************************************************************************
  * The Linux/Mac code is taken from Sarang Baheti                                        *
  * www.nullptr.me/2013/04/14/generating-stack-trace-on-os-x/                             *
- *****************************************************************************************
- * The VectorStackWalker is taken from the Inviwo project found at http://www.inviwo.org *
  ****************************************************************************************/
 
 #include <ghoul/misc/stacktrace.h>
@@ -35,38 +33,15 @@
 #include <cstdlib>
 #include <cxxabi.h>
 #include <execinfo.h>
-#elif defined _MSC_VER
-#include <StackWalker.h>
 #endif
-
-#ifdef _MSC_VER
-/**
- * The internal class that is used by the StackWalker library to customize the output.
- * In our case, we want to store each stackframe in a vector.
- */
-class VectorStackWalker : public StackWalker {
-public:
-    VectorStackWalker(StackWalkOptions level, std::vector<std::string>& vector_)
-        : StackWalker(level)
-        , vector(vector_)
-    {}
-
-    std::vector<std::string>& vector;
-
-protected:
-    void OnOutput(LPCSTR szText) override {
-        std::string str(szText);
-        // Remove trailing newline character
-        str = str.substr(0, str.size() - 1);
-        vector.push_back(str);
-    }
-};
-
-#endif // _MSC_VER
 
 namespace ghoul {
 
+#ifdef WIN32
+std::vector<std::string> stackTrace(std::stacktrace trace) {
+#else // ^^^^ WIN32 // !WIN32 vvvv
 std::vector<std::string> stackTrace() {
+#endif // WIN32
     std::vector<std::string> stackFrames;
 
 #if defined __unix__ || defined __APPLE__
@@ -89,7 +64,7 @@ std::vector<std::string> stackTrace() {
         std::vector<char> functionSymbol(MaxFunctionSymbolLength);
         std::vector<char> moduleName(MaxModuleNameLength);
         std::vector<char> addr(MaxAddressLength);
-        int  offset = 0;
+        int offset = 0;
 
         //
         // Typically this is how the backtrace looks like:
@@ -147,20 +122,13 @@ std::vector<std::string> stackTrace() {
     }
     free(strs);
 #elif WIN32
-    static VectorStackWalker sw(StackWalker::OptionsAll, stackFrames);
-    static bool IsInitialized = false;
-    if (!IsInitialized) {
-        // We only want to load the modules once as it is a very expensive operation
-        sw.LoadModules();
-        IsInitialized = true;
+    // Note that in order for the stackframes to work correctly on client machines,
+    // `_NT_SYMBOL_PATH` has to be defined as an environment variable
+
+    stackFrames.reserve(trace.size());
+    for (const std::stacktrace_entry& e : trace) {
+        stackFrames.push_back(std::to_string(e));
     }
-
-    // The vector has to be set as the StackWalker library is statically initialized the
-    // first time this function is called (and thus with a different stackFrames
-    // reference. If this call is removed, invalid memory will be accessed
-    sw.vector = stackFrames;
-
-    sw.ShowCallstack();
 #endif
 
     return stackFrames;

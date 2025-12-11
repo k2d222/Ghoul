@@ -31,12 +31,10 @@
 #include <ghoul/io/socket/sockettype.h>
 #include <ghoul/misc/exception.h>
 #include <array>
-#include <atomic>
 #include <condition_variable>
 #include <deque>
 #include <mutex>
 #include <thread>
-#include <unordered_map>
 #include <functional>
 
 struct addrinfo;
@@ -49,7 +47,7 @@ class TcpSocket : public Socket {
 public:
     using InputInterceptor = std::function<void(const char* data, size_t nBytes)>;
 
-    struct TcpSocketError : public RuntimeError {
+    struct TcpSocketError final : public RuntimeError {
         explicit TcpSocketError(std::string msg, std::string comp = "");
     };
 

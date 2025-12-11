@@ -26,11 +26,12 @@
 #ifndef __GHOUL___LOGLEVEL___H__
 #define __GHOUL___LOGLEVEL___H__
 
+#include <ghoul/format.h>
 #include <ghoul/glm.h>
 #include <ghoul/misc/assert.h>
 #include <ghoul/misc/exception.h>
 #include <ghoul/misc/stringconversion.h>
-#include <string>
+#include <string_view>
 
 namespace ghoul::logging {
 
@@ -100,7 +101,7 @@ constexpr logging::LogLevel from_string(std::string_view string) {
     if (string == "Fatal") { return logging::LogLevel::Fatal; }
     if (string == "None") { return logging::LogLevel::NoLogging; }
 
-    throw ghoul::RuntimeError("Unknown log level '" + std::string(string) + "'");
+    throw ghoul::RuntimeError(std::format("Unknown log level '{}'", string));
 }
 
 /**

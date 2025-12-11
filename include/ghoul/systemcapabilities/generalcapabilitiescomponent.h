@@ -28,7 +28,6 @@
 
 #include <ghoul/systemcapabilities/systemcapabilitiescomponent.h>
 
-#include <ghoul/misc/exception.h>
 #include <ghoul/systemcapabilities/systemcapabilities.h>
 
 namespace ghoul::systemcapabilities {
@@ -54,7 +53,7 @@ public:
     /**
      * Exception that is thrown if there was an error detecting the operating system.
      */
-    struct OperatingSystemError : public GeneralCapabilitiesComponentError {
+    struct OperatingSystemError final : public GeneralCapabilitiesComponentError {
         explicit OperatingSystemError(std::string desc, std::string errorMsg);
 
         /// The general description of the error
@@ -67,7 +66,7 @@ public:
     /**
      * Exception that is thrown if there was an error detecting the main memory.
      */
-    struct MainMemoryError : public GeneralCapabilitiesComponentError {
+    struct MainMemoryError final : public GeneralCapabilitiesComponentError {
         explicit MainMemoryError(std::string msg);
     };
 
@@ -222,7 +221,7 @@ protected:
     unsigned int _installedMainMemory = 0;
 
     /// Information about the CPU
-    std::string _cpu = "";
+    std::string _cpu;
 
     /// Number of CPU cores
     unsigned int _cores = 0;
@@ -237,7 +236,7 @@ protected:
     unsigned int _cacheSize = 0;
 
     /// Available CPU extensions
-    std::string _extensions = "";
+    std::string _extensions;
 };
 
 } // namespace ghoul::systemcapabilities

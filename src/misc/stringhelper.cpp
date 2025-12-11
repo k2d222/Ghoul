@@ -25,6 +25,7 @@
 
 #include <ghoul/misc/stringhelper.h>
 
+#include <ghoul/misc/assert.h>
 #include <algorithm>
 #include <cctype>
 
@@ -103,6 +104,33 @@ void trimWhitespace(std::string& value) {
     );
 }
 
+void trimWhitespace(std::string_view& value) {
+    constexpr std::string_view Ws = " \n\r\t";
+
+    if (value.empty()) {
+        return;
+    }
+
+    if (size_t it = value.find_first_not_of(Ws);  it != std::string_view::npos) {
+        value.remove_prefix(it);
+    }
+
+    for (size_t it = value.size() - 1; ; it--) {
+        if (value[it] != '\n' && value[it] != '\r' &&
+            value[it] != '\t' && value[it] != ' ')
+        {
+            value.remove_suffix(value.size() - (it + 1));
+            break;
+        }
+
+        // Can't use this check inside the for loop as the -1 would cause it to underflow
+        // to std::string_view::npos and things would break
+        if (it == 0) {
+            break;
+        }
+    }
+}
+
 void trimSurroundingCharacters(std::string& valueString, const char charToRemove) {
     while (valueString.front() == charToRemove) {
         valueString.erase(0, 1);
@@ -165,6 +193,54 @@ std::istream& getline(std::istream& inputStream, std::string& str, char delim) {
     }
 #endif //WIN32
     return inputStream;
+}
+
+std::string toAsciiSafePathString(const std::filesystem::path& p, char replacement) {
+    std::u8string s8 = p.generic_u8string();
+    std::string result;
+    result.reserve(s8.size());
+
+    for (size_t i = 0; i < s8.size(); ) {
+        unsigned char byte = s8[i];
+
+        size_t charLen = 1;
+
+        // Determine length of UTF-8 character
+        if ((byte & 0b10000000) == 0) {
+            charLen = 1; // ASCII
+        }
+        else if ((byte & 0b11100000) == 0b11000000) {
+            charLen = 2; // 2-byte UTF-8
+        }
+        else if ((byte & 0b11110000) == 0b11100000) {
+            charLen = 3; // 3-byte UTF-8
+        }
+        else if ((byte & 0b11111000) == 0b11110000) {
+            charLen = 4; // 4-byte UTF-8
+        }
+
+        // If ASCII, copy as-is; otherwise, replace with replacement character
+        if (charLen == 1) {
+            result.push_back(static_cast<char>(byte));
+        }
+        else {
+            result.push_back(replacement);
+        }
+
+        i += charLen;
+    }
+
+    return result;
+}
+
+bool containsNonAscii(const std::filesystem::path& p) {
+    const std::u8string s = p.generic_u8string();
+    for (auto it = s.begin(); it != s.end(); it++) {
+        if (static_cast<unsigned char>(*it) > 0x7F) {
+            return true;
+        }
+    }
+    return false;
 }
 
 } // namespace ghoul

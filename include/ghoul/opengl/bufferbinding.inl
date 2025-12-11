@@ -23,7 +23,6 @@
  * OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                                         *
  ****************************************************************************************/
 
-#include <ghoul/logging/logmanager.h>
 #include <ghoul/systemcapabilities/openglcapabilitiescomponent.h>
 
 namespace ghoul::opengl {
@@ -87,6 +86,19 @@ int BufferBinding<T>::numberActiveBindings() {
 }
 
 template <bufferbinding::Buffer T>
+unsigned int BufferBinding<T>::maxBufferBindings() {
+    if constexpr (T == bufferbinding::Buffer::AtomicCounter) {
+        return OpenGLCap.maxAtomicCounterBufferBindings();
+    }
+    else if constexpr (T == bufferbinding::Buffer::ShaderStorage) {
+        return OpenGLCap.maxShaderStorageBufferBindings();
+    }
+    else {
+        return OpenGLCap.maxUniformBufferBindings();
+    }
+}
+
+template <bufferbinding::Buffer T>
 void BufferBinding<T>::assignBinding() {
     if (_totalActive >= _maxBufferBindings) {
         //throw MaxBufferBindingsExceeded();
@@ -99,7 +111,7 @@ void BufferBinding<T>::assignBinding() {
         if (!_busyBindings[i]) {
             _number = static_cast<GLint>(i);
             _busyBindings[i] = true;
-            ++_totalActive;
+            _totalActive++;
             break;
         }
     }

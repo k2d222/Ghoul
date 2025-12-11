@@ -26,10 +26,9 @@
 #include <ghoul/opengl/textureatlas.h>
 
 #include <ghoul/format.h>
-#include <ghoul/logging/logmanager.h>
 #include <ghoul/misc/assert.h>
 #include <ghoul/opengl/ghoul_gl.h>
-#include <ghoul/opengl/texture.h>
+#include <utility>
 
 namespace ghoul::opengl {
 
@@ -57,15 +56,6 @@ TextureAtlas::TextureAtlas(glm::ivec3 size)
     std::fill(_data.begin(), _data.end(), static_cast<unsigned char>(0));
 }
 
-TextureAtlas::TextureAtlas(const TextureAtlas& rhs)
-    : _nodes(rhs._nodes)
-    , _handleInformation(rhs._handleInformation)
-    , _size(rhs._size)
-    , _nUsed(rhs._nUsed)
-    , _texture(new Texture(*rhs._texture))
-    , _data(rhs._data)
-{}
-
 TextureAtlas::TextureAtlas(TextureAtlas&& rhs) noexcept
     : _nodes(std::move(rhs._nodes))
     , _handleInformation(std::move(rhs._handleInformation))
@@ -74,18 +64,6 @@ TextureAtlas::TextureAtlas(TextureAtlas&& rhs) noexcept
     , _texture(std::move(rhs._texture))
     , _data(std::move(rhs._data))
 {}
-
-TextureAtlas& TextureAtlas::operator=(const TextureAtlas& rhs) {
-    if (this != &rhs) {
-        _nodes = rhs._nodes;
-        _handleInformation = rhs._handleInformation;
-        _size = rhs._size;
-        _nUsed = rhs._nUsed;
-        _texture = std::make_unique<Texture>(*rhs._texture);
-        _data = rhs._data;
-    }
-    return *this;
-}
 
 TextureAtlas& TextureAtlas::operator=(TextureAtlas&& rhs) noexcept {
     if (this != &rhs) {

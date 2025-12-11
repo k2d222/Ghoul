@@ -25,8 +25,11 @@
 
 #include <ghoul/misc/dictionary.h>
 
+#include <ghoul/format.h>
 #include <ghoul/misc/assert.h>
 #include <ghoul/misc/exception.h>
+#include <cstring>
+#include <utility>
 
 namespace {
     // Boolean constant used to check whether a value T is part of a parameter pack Ts
@@ -49,7 +52,7 @@ namespace {
 
 
     /// Exception that is thrown if the Dictionary does not contain a provided key
-    struct KeyError : public ghoul::RuntimeError {
+    struct KeyError final : public ghoul::RuntimeError {
         explicit KeyError(std::string msg)
             : RuntimeError(std::move(msg), "Dictionary")
         {}
@@ -58,7 +61,7 @@ namespace {
     /// Exception thrown if there was an error with a value, either trying to access the
     /// wrong type for a known key or if trying to access a vector/matrix based type and
     /// the underlying std::vector did contain the wrong number of values
-    struct ValueError : public ghoul::RuntimeError {
+    struct ValueError final : public ghoul::RuntimeError {
         explicit ValueError(std::string key, std::string msg)
             : ghoul::RuntimeError(
                 std::format("Key '{}': {}", std::move(key), std::move(msg)),

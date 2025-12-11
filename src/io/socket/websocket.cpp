@@ -26,10 +26,12 @@
 #include <ghoul/io/socket/websocket.h>
 
 #include <ghoul/format.h>
+#include <ghoul/io/socket/tcpsocket.h>
 #include <ghoul/logging/logmanager.h>
-#include <websocketpp/common/functional.hpp>
 #include <chrono>
 #include <functional>
+#include <string_view>
+#include <utility>
 
 namespace {
     constexpr std::string_view _loggerCat = "WebSocket";
@@ -41,10 +43,6 @@ using websocketpp::lib::placeholders::_2;
 using websocketpp::lib::bind;
 
 namespace ghoul::io {
-
-WebSocket::WebSocketError::WebSocketError(std::string msg, std::string comp)
-    : RuntimeError(std::move(msg), std::move(comp))
-{}
 
 WebSocket::WebSocket(std::unique_ptr<TcpSocket> socket,
                      websocketpp::server<websocketpp::config::core>& server)
@@ -125,11 +123,6 @@ void WebSocket::startStreams() {
     _tcpSocket->startStreams();
 }
 
-/**
- * Callback for incoming messages
- * \param hdl A handle to uniquely identify a connection.
- * \param msg The message
- */
 void WebSocket::onMessage(const websocketpp::connection_hdl&,
                    const websocketpp::server<websocketpp::config::core>::message_ptr& msg)
 {

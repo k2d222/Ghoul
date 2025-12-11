@@ -27,14 +27,20 @@
 
 #include <ghoul/filesystem/cachemanager.h>
 #include <ghoul/logging/logmanager.h>
+#include <ghoul/misc/assert.h>
 #include <ghoul/misc/defer.h>
+#include <ghoul/misc/exception.h>
+#include <ghoul/misc/stringhelper.h>
 #include <ghoul/misc/profiling.h>
+#include <algorithm>
+#include <string_view>
+#include <utility>
 
 #ifdef WIN32
 #include <Windows.h>
 #include <ShObjIdl.h>
 #include <ShlGuid.h>
-#else
+#else // ^^^^ WIN32 // !WIN32 vvvv
 #include <cerrno>
 #include <cstring>
 #include <dirent.h>
@@ -43,11 +49,11 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-#endif
+#endif // WIN32
 
 #if !defined(WIN32) && !defined(__APPLE__)
 #include <sys/inotify.h>
-#endif
+#endif // !defined(WIN32) && !defined(__APPLE__)
 
 namespace {
     constexpr std::string_view _loggerCat = "FileSystem";
@@ -245,7 +251,6 @@ void FileSystem::triggerFilesystemEvents() {
 #endif
 }
 
-
 #ifdef WIN32
 std::filesystem::path FileSystem::resolveShellLink(std::filesystem::path path) {
     IShellLink* psl = nullptr;
@@ -321,25 +326,48 @@ std::vector<std::filesystem::path> walkDirectory(const std::filesystem::path& pa
 
     namespace fs = std::filesystem;
     std::vector<std::filesystem::path> result;
-    if (fs::is_directory(path)) {
-        if (recursive) {
-            for (fs::directory_entry e : fs::recursive_directory_iterator(path)) {
-                if (filter(e)) {
-                    result.push_back(e.path());
+    try {
+        if (fs::is_directory(path)) {
+            if (recursive) {
+                for (fs::directory_entry e : fs::recursive_directory_iterator(path)) {
+                    if (filter(e)) {
+                        if (containsNonAscii(e)) {
+                            LWARNING(std::format(
+                                "'{}' contains non-ASCII characters, skipping",
+                                toAsciiSafePathString(e.path())
+                            ));
+                            continue;
+                        }
+                        result.push_back(e.path());
+                    }
+                }
+            }
+            else {
+                for (fs::directory_entry e : fs::directory_iterator(path)) {
+                    if (filter(e)) {
+                        if (containsNonAscii(e)) {
+                            LWARNING(std::format(
+                                "'{}' contains non-ASCII characters, skipping",
+                                toAsciiSafePathString(e.path())
+                            ));
+                            continue;
+                        }
+                        result.push_back(e.path());
+                    }
                 }
             }
         }
-        else {
-            for (fs::directory_entry e : fs::directory_iterator(path)) {
-                if (filter(e)) {
-                    result.push_back(e.path());
-                }
-            }
+        if (sorted) {
+            std::sort(result.begin(), result.end());
         }
     }
-    if (sorted) {
-        std::sort(result.begin(), result.end());
+    catch (const fs::filesystem_error& e) {
+        LERROR(std::format(
+            "Failed accessing directory {}, with error: {}", path, e.what()
+        ));
+        return {};
     }
+
     return result;
 }
 

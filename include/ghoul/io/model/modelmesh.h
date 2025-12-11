@@ -26,9 +26,10 @@
 #ifndef __GHOUL___MODELMESH___H__
 #define __GHOUL___MODELMESH___H__
 
+#include <ghoul/glm.h>
 #include <ghoul/opengl/ghoul_gl.h>
 #include <ghoul/opengl/texture.h>
-#include <ghoul/glm.h>
+#include <cstdint>
 #include <vector>
 
 namespace ghoul::opengl { class ProgramObject; }
@@ -73,9 +74,9 @@ public:
 
     void initialize();
     void deinitialize();
-    void render(opengl::ProgramObject& program, const glm::mat4x4& meshTransform,
+    void render(opengl::ProgramObject& program, const glm::mat4& meshTransform,
         bool isFullyTexturedModel = true, bool isProjection = false) const;
-    float calculateBoundingRadius(glm::mat4x4& transform) const;
+    float calculateBoundingRadius(glm::mat4& transform) const;
 
     void setInvisible(bool isInvisible);
     bool isInvisible() const;

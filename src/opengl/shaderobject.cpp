@@ -25,13 +25,10 @@
 
 #include <ghoul/opengl/shaderobject.h>
 
-#include <ghoul/filesystem/filesystem.h>
 #include <ghoul/filesystem/cachemanager.h>
-#include <ghoul/misc/crc32.h>
-#include <algorithm>
-#include <filesystem>
+#include <ghoul/filesystem/filesystem.h>
 #include <fstream>
-#include <functional>
+#include <utility>
 
 namespace ghoul::opengl {
 
@@ -44,8 +41,8 @@ ShaderObject::ShaderCompileError::ShaderCompileError(std::string error,
                                                      std::string name)
     : ShaderObjectError(
         name.empty() ?
-        std::format("Error linking program object: {}\n{}", error, ident) :
-        std::format("Error linking program object [{}]: {}\n{}", name, error, ident)
+        std::format("Error compiling shader object: {}\n{}", error, ident) :
+        std::format("Error compiling shader object [{}]: {}\n{}", name, error, ident)
     )
     , compileError(std::move(error))
     , fileIdentifiers(std::move(ident))
@@ -61,6 +58,7 @@ ShaderObject::ShaderObject(ShaderType shaderType, const std::filesystem::path& f
             "ShaderObject" :
             std::format("ShaderObject('{}')", _shaderName)
     )
+    , _preprocessor(filename, std::move(dictionary))
 {
     const bool hasFilename = !filename.empty();
 
@@ -78,9 +76,7 @@ ShaderObject::ShaderObject(ShaderType shaderType, const std::filesystem::path& f
             _shaderName.c_str()
         );
     }
-#endif
-    _preprocessor.setFilename(filename);
-    _preprocessor.setDictionary(std::move(dictionary));
+#endif // GL_VERSION_4_3
 
     if (hasFilename) {
         rebuildFromFile();
@@ -112,17 +108,15 @@ ShaderObject::ShaderObject(const ShaderObject& cpy)
     rebuildFromFile();
 }
 
-ShaderObject::ShaderObject(ShaderObject&& rhs) noexcept {
-    if (this != &rhs) {
-        _id = rhs._id;
-
-        _type = rhs._type;
-        _shaderName = std::move(rhs._shaderName);
-        _loggerCat = std::move(rhs._loggerCat);
-        _onChangeCallback = std::move(rhs._onChangeCallback);
-        _preprocessor = std::move(rhs._preprocessor);
-        setShaderObjectCallback(rhs._onChangeCallback);
-    }
+ShaderObject::ShaderObject(ShaderObject&& rhs) noexcept
+    : _id(rhs._id)
+    , _type(rhs._type)
+    , _shaderName(std::move(rhs._shaderName))
+    , _loggerCat(std::move(rhs._loggerCat))
+    , _onChangeCallback(std::move(rhs._onChangeCallback))
+    , _preprocessor(std::move(rhs._preprocessor))
+{
+    setShaderObjectCallback(rhs._onChangeCallback);
 }
 
 ShaderObject::~ShaderObject() {
@@ -204,15 +198,6 @@ void ShaderObject::setShaderObjectCallback(ShaderObjectCallback changeCallback) 
     _preprocessor.setCallback(_onChangeCallback);
 }
 
-void ShaderObject::setFilename(const std::filesystem::path& filename) {
-    ghoul_assert(!filename.empty(), "Filename must not be empty");
-    if (!std::filesystem::is_regular_file(filename)) {
-        throw FileNotFoundError(filename);
-    }
-
-    _preprocessor.setFilename(filename);
-}
-
 std::filesystem::path ShaderObject::filename() const {
     return _preprocessor.filename();
 }
@@ -226,8 +211,7 @@ Dictionary ShaderObject::dictionary() const {
 }
 
 void ShaderObject::rebuildFromFile() {
-    std::string contents;
-    _preprocessor.process(contents);
+    std::string contents = _preprocessor.process();
 
     // If in debug mode, output the source to file
 #ifdef GHL_DEBUG
@@ -279,7 +263,7 @@ void ShaderObject::compile() {
         if (logLength == 0) {
             throw ShaderCompileError(
                 "Unknown error",
-                _preprocessor.getFileIdentifiersString(),
+                _preprocessor.includedFiles(),
                 name()
             );
         }
@@ -287,11 +271,7 @@ void ShaderObject::compile() {
         std::vector<GLchar> log(logLength);
         glGetShaderInfoLog(_id, logLength, nullptr, log.data());
         const std::string logMessage = std::string(log.data());
-        throw ShaderCompileError(
-            logMessage,
-            _preprocessor.getFileIdentifiersString(),
-            name()
-        );
+        throw ShaderCompileError(logMessage, _preprocessor.includedFiles(), name());
     }
 }
 

@@ -30,8 +30,10 @@
 #include <ghoul/misc/memorypool.h>
 #include <functional>
 #include <map>
+#include <memory_resource>
 #include <string>
 #include <string_view>
+#include <typeinfo>
 #include <vector>
 
 namespace ghoul {
@@ -48,7 +50,7 @@ struct TemplateFactoryError : public RuntimeError {
 /**
  * Exception that is thrown if a requested class has not been registered before.
  */
-struct TemplateClassNotFoundError : public TemplateFactoryError {
+struct TemplateClassNotFoundError final : public TemplateFactoryError {
     explicit TemplateClassNotFoundError(std::string name);
     const std::string className;
 };
@@ -56,7 +58,7 @@ struct TemplateClassNotFoundError : public TemplateFactoryError {
 /**
  * Exception that is thrown if a registered class is called with a wrong constructor.
  */
-struct TemplateConstructionError : public TemplateFactoryError {
+struct TemplateConstructionError final : public TemplateFactoryError {
     explicit TemplateConstructionError(std::string msg);
 };
 
@@ -127,7 +129,8 @@ public:
      *        constructor, but a Dictionary was used.
      */
     using FactoryFunction = std::function<
-        BaseClass* (bool, const ghoul::Dictionary&, MemoryPoolBase* pool)
+        BaseClass* (bool useDictionary, const ghoul::Dictionary& dict,
+                    pmr::memory_resource* pool)
     >;
 
     /**
@@ -147,7 +150,8 @@ public:
      *        not have a default constructor
      * \pre \p className must not be empty
      */
-    BaseClass* create(std::string_view className, MemoryPoolBase* pool = nullptr) const;
+    BaseClass* create(std::string_view className,
+        pmr::memory_resource* pool = nullptr) const;
 
     /**
      * Creates an instance of the class which was registered under the provided
@@ -171,7 +175,7 @@ public:
      * \pre \p className must not be empty
      */
     BaseClass* create(std::string_view className, const Dictionary& dictionary,
-        MemoryPoolBase* pool = nullptr) const;
+        pmr::memory_resource* pool = nullptr) const;
 
     /**
      * Registers a `Class` with the provided \p className so that it can later be
@@ -211,8 +215,8 @@ public:
      * \pre \p factoryFunction must not be `nullptr`
      */
     void registerClass(std::string className,
-        std::function<BaseClass*(bool, const ghoul::Dictionary&, MemoryPoolBase* pool)>
-            factoryFunction);
+        std::function<BaseClass*(bool, const ghoul::Dictionary&,
+                                 pmr::memory_resource* pool)> factoryFunction);
 
     /**
      * Checks if any class has been registered under the provided \p className As any

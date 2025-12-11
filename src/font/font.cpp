@@ -32,11 +32,13 @@
 #include <ghoul/misc/assert.h>
 #include <ghoul/misc/defer.h>
 #include <ghoul/misc/profiling.h>
-#include <ghoul/misc/stringhelper.h>
+#include <ghoul/opengl/texture.h>
 #include <ghoul/opengl/textureatlas.h>
 #include <algorithm>
 #include <array>
-#include <tuple>
+#include <limits>
+#include <string>
+#include <utility>
 
 namespace {
     // Sizes in FT are given in 1/64th of pt
@@ -59,9 +61,8 @@ namespace {
         if (library) {
             FT_Done_FreeType(library);
         }
-        using namespace ghoul;
-        fontrendering::Error e = fontrendering::error(error);
-        throw RuntimeError(
+        ghoul::fontrendering::Error e = ghoul::fontrendering::error(error);
+        throw ghoul::RuntimeError(
             std::format(
                 "Error loading font '{}' for size '{}': {} {}",
                 name, size, e.code, e.message

@@ -27,8 +27,8 @@
 
 #include <ghoul/logging/logmanager.h>
 #include <ghoul/format.h>
-#include <iostream>
 #include <fstream>
+#include <string_view>
 
 namespace {
     constexpr std::string_view _loggerCat = "RawVolumeReader";
@@ -61,7 +61,7 @@ std::unique_ptr<opengl::Texture> RawVolumeReader::read(const std::string& filena
     const unsigned int s = glm::compMul(_hints._dimensions);
     GLubyte* data = new GLubyte[s];
 
-    std::ifstream fin(filename, std::ios::in | std::ios::binary);
+    std::ifstream fin = std::ifstream(filename, std::ios::in | std::ios::binary);
     if (fin.good()) {
         fin.read(reinterpret_cast<char*>(data), sizeof(unsigned char) * s);
         fin.close();
@@ -72,7 +72,7 @@ std::unique_ptr<opengl::Texture> RawVolumeReader::read(const std::string& filena
 
     return std::make_unique<opengl::Texture>(
         data,
-        glm::size3_t(_hints._dimensions),
+        glm::uvec3(_hints._dimensions),
         GL_TEXTURE_3D,
         _hints._format,
         _hints._internalFormat,

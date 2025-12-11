@@ -25,16 +25,21 @@
 
 #include <ghoul/io/model/modelgeometry.h>
 
-#include <ghoul/filesystem/file.h>
-#include <ghoul/filesystem/filesystem.h>
-#include <ghoul/io/texture/texturereader.h>
+#include <ghoul/format.h>
+#include <ghoul/io/model/modelmesh.h>
 #include <ghoul/logging/logmanager.h>
-#include <ghoul/misc/dictionary.h>
-#include <ghoul/misc/invariants.h>
+#include <ghoul/misc/assert.h>
 #include <ghoul/misc/profiling.h>
-#include <ghoul/misc/templatefactory.h>
-#include <fstream>
 #include <glm/gtc/type_ptr.hpp>
+#include <algorithm>
+#include <array>
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <fstream>
+#include <limits>
+#include <string_view>
+#include <utility>
 
 namespace {
     constexpr std::string_view _loggerCat = "ModelGeometry";
@@ -52,19 +57,19 @@ namespace {
         else if (format == "RGBA") { return Format::RGBA; }
         else if (format == "BGRA") { return Format::BGRA; }
         else if (format == "Dept") { return Format::DepthComponent; }
-        else { throw ghoul::MissingCaseException(); }
+        else                       { throw ghoul::MissingCaseException(); }
     }
 
     std::string formatToString(ghoul::opengl::Texture::Format format) {
         switch (format) {
-            case ghoul::opengl::Texture::Format::Red: return "Red ";
-            case ghoul::opengl::Texture::Format::RG: return "RG  ";
-            case ghoul::opengl::Texture::Format::RGB: return "RGB ";
-            case ghoul::opengl::Texture::Format::BGR: return "BGR ";
-            case ghoul::opengl::Texture::Format::RGBA: return "RGBA";
-            case ghoul::opengl::Texture::Format::BGRA: return "BGRA";
+            case ghoul::opengl::Texture::Format::Red:            return "Red ";
+            case ghoul::opengl::Texture::Format::RG:             return "RG  ";
+            case ghoul::opengl::Texture::Format::RGB:            return "RGB ";
+            case ghoul::opengl::Texture::Format::BGR:            return "BGR ";
+            case ghoul::opengl::Texture::Format::RGBA:           return "RGBA";
+            case ghoul::opengl::Texture::Format::BGRA:           return "BGRA";
             case ghoul::opengl::Texture::Format::DepthComponent: return "Dept";
-            default: throw ghoul::MissingCaseException();
+            default:                                  throw ghoul::MissingCaseException();
         }
     }
 
@@ -77,27 +82,26 @@ namespace {
         else if (dataType == "uint") { return GL_UNSIGNED_INT; }
         else if (dataType == "floa") { return GL_FLOAT; }
         else if (dataType == "doub") { return GL_DOUBLE; }
-        else { throw ghoul::MissingCaseException(); }
+        else                         { throw ghoul::MissingCaseException(); }
     }
 
     std::string dataTypeToString(GLenum dataType) {
         switch (dataType) {
-            case GL_BYTE: return "byte";
-            case GL_UNSIGNED_BYTE: return "ubyt";
-            case GL_SHORT: return "shor";
+            case GL_BYTE:           return "byte";
+            case GL_UNSIGNED_BYTE:  return "ubyt";
+            case GL_SHORT:          return "shor";
             case GL_UNSIGNED_SHORT: return "usho";
-            case GL_INT: return "int ";
-            case GL_UNSIGNED_INT: return "uint";
-            case GL_FLOAT: return "floa";
-            case GL_DOUBLE: return "doub";
-            default: throw ghoul::MissingCaseException();
+            case GL_INT:            return "int ";
+            case GL_UNSIGNED_INT:   return "uint";
+            case GL_FLOAT:          return "floa";
+            case GL_DOUBLE:         return "doub";
+            default:                throw ghoul::MissingCaseException();
         }
     }
 
-
     void calculateBoundingRadiusRecursive(const std::vector<ghoul::io::ModelNode>& nodes,
                                           const ghoul::io::ModelNode* node,
-                                          const glm::mat4x4& parentTransform,
+                                          const glm::mat4& parentTransform,
                                           float& maximumDistanceSquared)
     {
         if (!node) {
@@ -106,7 +110,7 @@ namespace {
         }
 
         // NOTE: The bounding radius will not change along with an animation
-        glm::mat4x4 globalTransform = parentTransform * node->transform();
+        glm::mat4 globalTransform = parentTransform * node->transform();
 
         for (const ghoul::io::ModelMesh& mesh : node->meshes()) {
             const float d = mesh.calculateBoundingRadius(globalTransform);
@@ -126,7 +130,7 @@ namespace {
     void renderRecursive(const std::vector<ghoul::io::ModelNode>& nodes,
                          const ghoul::io::ModelNode* node,
                          ghoul::opengl::ProgramObject& program,
-                         const glm::mat4x4& parentTransform, bool isFullyTexturedModel,
+                         const glm::mat4& parentTransform, bool isFullyTexturedModel,
                          bool isProjection)
     {
         if (!node) {
@@ -134,7 +138,7 @@ namespace {
             return;
         }
 
-        glm::mat4x4 globalTransform;
+        glm::mat4 globalTransform;
         if (node->hasAnimation()) {
             // Animation is given by Assimp in absolute format
             // i.e. animation replaces old transform
@@ -223,7 +227,7 @@ std::unique_ptr<modelgeometry::ModelGeometry> ModelGeometry::loadCacheFile(
     std::vector<modelgeometry::ModelGeometry::TextureEntry> textureStorageArray;
     textureStorageArray.reserve(nTextureEntries);
 
-    for (int32_t te = 0; te < nTextureEntries; ++te) {
+    for (int32_t te = 0; te < nTextureEntries; te++) {
         modelgeometry::ModelGeometry::TextureEntry textureEntry;
 
         // Name
@@ -306,7 +310,7 @@ std::unique_ptr<modelgeometry::ModelGeometry> ModelGeometry::loadCacheFile(
     // Nodes
     std::vector<io::ModelNode> nodeArray;
     nodeArray.reserve(nNodes);
-    for (int32_t n = 0; n < nNodes; ++n) {
+    for (int32_t n = 0; n < nNodes; n++) {
         // Read how many meshes to read
         int32_t nMeshes = 0;
         fileStream.read(reinterpret_cast<char*>(&nMeshes), sizeof(int32_t));
@@ -321,7 +325,7 @@ std::unique_ptr<modelgeometry::ModelGeometry> ModelGeometry::loadCacheFile(
         // Meshes
         std::vector<io::ModelMesh> meshArray;
         meshArray.reserve(nMeshes);
-        for (int32_t m = 0; m < nMeshes; ++m) {
+        for (int32_t m = 0; m < nMeshes; m++) {
             // HasVertexColors
             uint8_t col = 0;
             fileStream.read(reinterpret_cast<char*>(&col), sizeof(uint8_t));
@@ -339,7 +343,7 @@ std::unique_ptr<modelgeometry::ModelGeometry> ModelGeometry::loadCacheFile(
             std::vector<io::ModelMesh::Vertex> vertexArray;
             vertexArray.reserve(nVertices);
 
-            for (int32_t v = 0; v < nVertices; ++v) {
+            for (int32_t v = 0; v < nVertices; v++) {
                 io::ModelMesh::Vertex vertex;
                 fileStream.read(
                     reinterpret_cast<char*>(&vertex),
@@ -381,7 +385,7 @@ std::unique_ptr<modelgeometry::ModelGeometry> ModelGeometry::loadCacheFile(
             std::vector<io::ModelMesh::Texture> textureArray;
             textureArray.reserve(nTextures);
 
-            for (int32_t t = 0; t < nTextures; ++t) {
+            for (int32_t t = 0; t < nTextures; t++) {
                 io::ModelMesh::Texture texture;
 
                 // Skip marker
@@ -456,12 +460,12 @@ std::unique_ptr<modelgeometry::ModelGeometry> ModelGeometry::loadCacheFile(
         // Transform
         GLfloat rawTransform[16];
         fileStream.read(reinterpret_cast<char*>(rawTransform), 16 * sizeof(GLfloat));
-        const glm::mat4x4 transform = glm::make_mat4(rawTransform);
+        glm::mat4 transform = glm::make_mat4(rawTransform);
 
         // AnimationTransform
         GLfloat rawAnimTransform[16];
         fileStream.read(reinterpret_cast<char*>(&rawAnimTransform), 16 * sizeof(GLfloat));
-        const glm::mat4x4 animationTransform = glm::make_mat4(rawAnimTransform);
+        const glm::mat4 animationTransform = glm::make_mat4(rawAnimTransform);
 
         // Parent
         int32_t parent = 0;
@@ -532,7 +536,7 @@ std::unique_ptr<modelgeometry::ModelGeometry> ModelGeometry::loadCacheFile(
         // NodeAnimations
         auto animation = std::make_unique<io::ModelAnimation>(name, duration);
         animation->nodeAnimations().reserve(nNodeAnimations);
-        for (int32_t na = 0; na < nNodeAnimations; ++na) {
+        for (int32_t na = 0; na < nNodeAnimations; na++) {
             io::ModelAnimation::NodeAnimation nodeAnimation;
 
             // Node index
@@ -544,7 +548,7 @@ std::unique_ptr<modelgeometry::ModelGeometry> ModelGeometry::loadCacheFile(
             uint32_t nPos = 0;
             fileStream.read(reinterpret_cast<char*>(&nPos), sizeof(uint32_t));
             nodeAnimation.positions.reserve(nPos);
-            for (uint32_t p = 0; p < nPos; ++p) {
+            for (uint32_t p = 0; p < nPos; p++) {
                 io::ModelAnimation::PositionKeyframe posKeyframe;
 
                 // Position
@@ -565,7 +569,7 @@ std::unique_ptr<modelgeometry::ModelGeometry> ModelGeometry::loadCacheFile(
             uint32_t nRot = 0;
             fileStream.read(reinterpret_cast<char*>(&nRot), sizeof(uint32_t));
             nodeAnimation.rotations.reserve(nRot);
-            for (uint32_t r = 0; r < nRot; ++r) {
+            for (uint32_t r = 0; r < nRot; r++) {
                 io::ModelAnimation::RotationKeyframe rotKeyframe;
 
                 // Rotation
@@ -585,7 +589,7 @@ std::unique_ptr<modelgeometry::ModelGeometry> ModelGeometry::loadCacheFile(
             uint32_t nScale = 0;
             fileStream.read(reinterpret_cast<char*>(&nScale), sizeof(uint32_t));
             nodeAnimation.scales.reserve(nScale);
-            for (uint32_t s = 0; s < nScale; ++s) {
+            for (uint32_t s = 0; s < nScale; s++) {
                 io::ModelAnimation::ScaleKeyframe scaleKeyframe;
 
                 // Scale
@@ -665,7 +669,7 @@ bool ModelGeometry::saveToCacheFile(const std::filesystem::path& cachedFile) con
     }
     fileStream.write(reinterpret_cast<const char*>(&nTextureEntries), sizeof(int32_t));
 
-    for (int32_t te = 0; te < nTextureEntries; ++te) {
+    for (int32_t te = 0; te < nTextureEntries; te++) {
         // Name
         int32_t nameSize = static_cast<int32_t>(
             _textureStorage[te].name.size() * sizeof(char)
@@ -756,7 +760,7 @@ bool ModelGeometry::saveToCacheFile(const std::filesystem::path& cachedFile) con
             }
             fileStream.write(reinterpret_cast<const char*>(&nVertices), sizeof(int32_t));
 
-            for (int32_t v = 0; v < nVertices; ++v) {
+            for (int32_t v = 0; v < nVertices; v++) {
                 fileStream.write(
                     reinterpret_cast<const char*>(&mesh.vertices()[v]),
                     sizeof(io::ModelMesh::Vertex)
@@ -792,7 +796,7 @@ bool ModelGeometry::saveToCacheFile(const std::filesystem::path& cachedFile) con
             }
             fileStream.write(reinterpret_cast<const char*>(&nTextures), sizeof(int32_t));
 
-            for (int32_t t = 0; t < nTextures; ++t) {
+            for (int32_t t = 0; t < nTextures; t++) {
                 // Don't save the debug texture to the cache
                 // Write matching skip marker
                 if (mesh.textures()[t].useForcedColor) {
@@ -845,7 +849,7 @@ bool ModelGeometry::saveToCacheFile(const std::filesystem::path& cachedFile) con
                 if (mesh.textures()[t].hasTexture) {
                     // Search the textureStorage to find the texture entry
                     bool wasFound = false;
-                    for (size_t te = 0; te < _textureStorage.size(); ++te) {
+                    for (size_t te = 0; te < _textureStorage.size(); te++) {
                         if (_textureStorage[te].name ==
                             mesh.textures()[t].texture->name())
                         {
@@ -870,11 +874,11 @@ bool ModelGeometry::saveToCacheFile(const std::filesystem::path& cachedFile) con
         }
 
         // Transform
-        glm::mat4x4 transform = node.transform();
+        glm::mat4 transform = node.transform();
         fileStream.write(reinterpret_cast<const char*>(&transform), 16 * sizeof(GLfloat));
 
         // AnimationTransform
-        glm::mat4x4 animationTransform = node.animationTransform();
+        glm::mat4 animationTransform = node.animationTransform();
         fileStream.write(
             reinterpret_cast<const char*>(&animationTransform),
             16 * sizeof(GLfloat)
@@ -900,10 +904,10 @@ bool ModelGeometry::saveToCacheFile(const std::filesystem::path& cachedFile) con
     }
 
     // Animation
-    uint8_t a = _animation != nullptr ? 1 : 0;
+    uint8_t a = _animation ? 1 : 0;
     fileStream.write(reinterpret_cast<const char*>(&a), sizeof(uint8_t));
 
-    if (_animation != nullptr) {
+    if (_animation) {
         // Name
         if (_animation->name().size() >= std::numeric_limits<uint8_t>::max()) {
             LWARNING(std::format(
@@ -1071,7 +1075,7 @@ void ModelGeometry::calculateBoundingRadius() {
         return;
     }
 
-    const glm::mat4x4 parentTransform = glm::mat4x4(1.f);
+    const glm::mat4 parentTransform = glm::mat4(1.f);
     float maximumDistanceSquared = 0.f;
     calculateBoundingRadiusRecursive(
         _nodes,
@@ -1160,7 +1164,7 @@ void ModelGeometry::render(opengl::ProgramObject& program, bool isFullyTexturedM
         return;
     }
 
-    const glm::mat4x4 parentTransform = glm::mat4x4(1.f);
+    const glm::mat4 parentTransform = glm::mat4(1.f);
     renderRecursive(
         _nodes,
         _nodes.data(),

@@ -26,8 +26,10 @@
 #ifndef __GHOUL___DICTIONARYLUAFORMATTER___H__
 #define __GHOUL___DICTIONARYLUAFORMATTER___H__
 
-#include <ghoul/misc/boolean.h>
 #include <ghoul/misc/exception.h>
+
+#include <ghoul/misc/boolean.h>
+#include <string>
 
 namespace ghoul {
 
@@ -36,7 +38,7 @@ class Dictionary;
 /**
  * This exception is thrown if an unknown type is being converted.
  */
-struct LuaFormattingError : public RuntimeError {
+struct LuaFormattingError final : public RuntimeError {
     explicit LuaFormattingError(const std::string& msg);
 };
 

@@ -29,8 +29,8 @@
 #include <ghoul/misc/assert.h>
 #include <ghoul/misc/boolean.h>
 #include <ghoul/misc/exception.h>
-#include <ghoul/misc/stringconversion.h>
 #include <string>
+#include <string_view>
 #include <vector>
 
 // X11 #defines 'None' in its X.h header file. We don't want it here
@@ -137,17 +137,6 @@ public:
 
 protected:
 #ifdef WIN32
-    /**
-     * Exception that will be thrown if there was an error regarding Windows' Management
-     * Instrumentation.
-     */
-    struct WMIError : public ghoul::RuntimeError {
-        explicit WMIError(std::string msg, long code);
-
-        const std::string message;
-        const long errorCode;
-    };
-
     /**
      * This method initializes the Windows Management Instrumentation.
      *

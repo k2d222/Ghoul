@@ -31,6 +31,8 @@
 #include <ghoul/misc/stringhelper.h>
 #include <algorithm>
 #include <fstream>
+#include <iterator>
+#include <utility>
 
 namespace {
     std::string readFirstValidLine(std::ifstream& file) {
@@ -175,9 +177,9 @@ std::vector<std::vector<std::string>> loadCSVFile(const std::filesystem::path& f
 
     const std::vector<std::string> elements = ghoul::tokenizeString(line, ',');
     if (elements.empty()) {
-        throw ghoul::RuntimeError(
-            std::format("CSV file '{}' did not contain any lines", fileName)
-        );
+        throw ghoul::RuntimeError(std::format(
+            "CSV file '{}' did not contain any lines", fileName
+        ));
     }
 
     std::vector<int> indices(columns.size());

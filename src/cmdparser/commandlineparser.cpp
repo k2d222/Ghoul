@@ -29,53 +29,61 @@
 #include <ghoul/format.h>
 #include <ghoul/logging/logmanager.h>
 #include <ghoul/misc/assert.h>
+#include <ghoul/misc/exception.h>
 #include <algorithm>
 #include <map>
+#include <sstream>
+#include <string_view>
+#include <utility>
 
 namespace {
+    constexpr std::string_view _loggerCat = "CommandlineParser";
 
-constexpr std::string_view _loggerCat = "CommandlineParser";
+    struct CommandlineParserError final : public ghoul::RuntimeError {
+        explicit CommandlineParserError(std::string msg)
+            : ghoul::RuntimeError(std::move(msg), "CommandlineParser")
+        {}
+    };
 
-/**
- * Extracts multiple arguments from a single list.
- *
- * If `count` is `-2`, arguments will be extracted, as long as no new commands is found.
- * `in[begin]` itself will not be extracted if this is the command.
- *
- * If `count` is `-1`, the rest of the line will be extracted.
- * If `count` is `> 0`, that many arguments will be extracted and returned.
- */
-int extractArguments(const std::vector<std::string>& in, std::vector<std::string>& out,
-                     const size_t begin, const int count)
-{
-    if (count == -1) {
-        for (size_t i = 0; (i < in.size()) && ((begin + 1 + i) < in.size()); i++) {
-            out.push_back(in[begin + 1 + i]);
+    /**
+     * Extracts multiple arguments from a single list.
+     *
+     * If `count` is `-2`, arguments will be extracted, as long as no new commands is
+     * found. `in[begin]` itself will not be extracted if this is the command.
+     *
+     * If `count` is `-1`, the rest of the line will be extracted.
+     * If `count` is `> 0`, that many arguments will be extracted and returned.
+     */
+    int extractArguments(const std::vector<std::string>& in,
+                         std::vector<std::string>& out, size_t begin, int count)
+    {
+        if (count == -1) {
+            for (size_t i = 0; (i < in.size()) && ((begin + 1 + i) < in.size()); i++) {
+                out.push_back(in[begin + 1 + i]);
+            }
         }
-    }
-    else if (count == -2) {
-        // Extract arguments until a new command is found
-        // The '-' restriction is enforced in the #addCommand method
-        for (size_t i = begin; (i < in.size()) && (in[i][0] != '-'); i++) {
-            out.push_back(in[i]);
+        else if (count == -2) {
+            // Extract arguments until a new command is found
+            // The '-' restriction is enforced in the #addCommand method
+            for (size_t i = begin; (i < in.size()) && (in[i][0] != '-'); i++) {
+                out.push_back(in[i]);
+            }
         }
-    }
-    else if (count == -3) {
-        // Extract arguments until a new command is found
-        // The '-' restriction is enforced in the #addCommand method
-        for (size_t i = begin + 1; (i < in.size()) && (in[i][0] != '-'); i++) {
-            out.push_back(in[i]);
+        else if (count == -3) {
+            // Extract arguments until a new command is found
+            // The '-' restriction is enforced in the #addCommand method
+            for (size_t i = begin + 1; (i < in.size()) && (in[i][0] != '-'); i++) {
+                out.push_back(in[i]);
+            }
         }
-    }
-    else {
-        for (int i = 0; (i < count) && ((begin + 1 + i) < in.size()); i++) {
-            out.push_back(in[begin + 1 + i]);
+        else {
+            for (int i = 0; (i < count) && ((begin + 1 + i) < in.size()); i++) {
+                out.push_back(in[begin + 1 + i]);
+            }
         }
-    }
 
-    return static_cast<int>(out.size());
-}
-
+        return static_cast<int>(out.size());
+    }
 } // namespace
 
 namespace ghoul::cmdparser {
@@ -171,13 +179,10 @@ CommandlineParser::DisplayHelpText CommandlineParser::execute() {
                 else {
                     // We have found an unknown command but we don't allow them, so we
                     // have to bail out here
-                    throw ghoul::RuntimeError(
-                        std::format(
-                            "Found unknown command '{}' but none are allowed",
-                            _arguments[i]
-                        ),
-                        "CommandlineParser"
-                    );
+                    throw CommandlineParserError(std::format(
+                        "Found unknown command '{}' but none are allowed",
+                        _arguments[i]
+                    ));
                 }
             }
         }
@@ -200,10 +205,9 @@ CommandlineParser::DisplayHelpText CommandlineParser::execute() {
                     continue;
                 }
                 else {
-                    throw ghoul::RuntimeError(
-                        std::format("{} is not a valid command", _arguments[i]),
-                        "CommandlineParser"
-                    );
+                    throw CommandlineParserError(std::format(
+                        "{} is not a valid command", _arguments[i]
+                    ));
                 }
             }
 
@@ -221,13 +225,10 @@ CommandlineParser::DisplayHelpText CommandlineParser::execute() {
             if (!currentCmd->allowsMultipleCalls() &&
                 parameterMap.find(currentCmd) != parameterMap.end())
             {
-                throw ghoul::RuntimeError(
-                    std::format(
-                        "'{}' does not allow multiple calls in a single line",
-                        currentCmd->name()
-                    ),
-                    "CommandlineParser"
-                );
+                throw CommandlineParserError(std::format(
+                    "'{}' does not allow multiple calls in a single line",
+                    currentCmd->name()
+                ));
             }
 
             parameterMap.emplace(currentCmd, params);
@@ -247,10 +248,7 @@ CommandlineParser::DisplayHelpText CommandlineParser::execute() {
             );
         }
         else {
-            throw ghoul::RuntimeError(
-                "No command available for nameless parameters",
-                "CommandlineParser"
-            );
+            throw CommandlineParserError("No command available for nameless parameters");
         }
     }
 

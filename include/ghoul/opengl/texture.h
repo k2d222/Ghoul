@@ -30,10 +30,9 @@
 #include <ghoul/misc/boolean.h>
 #include <ghoul/opengl/ghoul_gl.h>
 #include <array>
-#include <glm/gtx/std_based_type.hpp>
 #include <string>
 
-//#define Debugging_Ghoul_Textures_Indices
+// #define Debugging_Ghoul_Textures_Indices
 
 namespace ghoul::opengl {
 
@@ -605,7 +604,7 @@ public:
      * \pre \p x must be smaller than the width of the Texture
      * \pre \p y must be smaller than the height of the Texture
      */
-    template<class T>
+    template <class T>
     const T& texel(unsigned int x, unsigned int y) const;
 
     /**
@@ -644,7 +643,7 @@ public:
      * \pre `position.x` must be smaller than the width of the Texture
      * \pre `position.y` must be smaller than the height of the Texture
      */
-    template<class T>
+    template <class T>
     const T& texel(const glm::uvec2& position) const;
 
     /**
@@ -678,7 +677,9 @@ public:
      * return value.
      *
      * \tparam T The type of the data that is returned
-     * \param x, y, z The coordinates for the `width`, `height`, and `depth` axes
+     * \param x The coordinates for the `width` axis
+     * \param y The coordinates for the `height` axis
+     * \param z The coordinates for the `depth` axis
      * \return The texel at the specified position casted to the requested type T
      *
      * \pre The Texture must be a three dimensional Texture
@@ -687,7 +688,7 @@ public:
      * \pre \p y must be smaller than the height of the Texture
      * \pre \p z must be smaller than the depth of the Texture
      */
-    template<class T>
+    template <class T>
     const T& texel(unsigned int x, unsigned int y, unsigned int z) const;
 
     /**
@@ -727,7 +728,7 @@ public:
      * \pre `position.y` must be smaller than the height of the Texture
      * \pre `position.z` must be smaller than the height of the Texture
      */
-    template<class T>
+    template <class T>
     const T& texel(const glm::uvec3& position) const;
 
     /**
@@ -853,7 +854,7 @@ protected:
      * Bind the Texture and apply the changes to the OpenGL state according to the current
      * wrapping mode.
      */
-    void applyWrapping();
+    void applyWrapping() const;
 
     void applySwizzleMask();
 
@@ -867,12 +868,12 @@ protected:
     /**
      * Upload the passed data pointer to graphics memory by calling glTexImage.
      */
-    void uploadDataToTexture(void* pixelData);
+    void uploadDataToTexture(void* pixelData) const;
 
     /**
      * Re-upload the passed data pointer to graphics memory by calling glTexSubImage.
      */
-    void reUploadDataToTexture(void* pixelData);
+    void reUploadDataToTexture(void* pixelData) const;
 
 private:
     const std::array<GLenum, 4> DefaultSwizzleMask = {

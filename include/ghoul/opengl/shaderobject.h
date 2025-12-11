@@ -26,12 +26,15 @@
 #ifndef __GHOUL___SHADEROBJECT___H__
 #define __GHOUL___SHADEROBJECT___H__
 
+#include <ghoul/misc/dictionary.h>
 #include <ghoul/misc/exception.h>
 #include <ghoul/opengl/ghoul_gl.h>
 #include <ghoul/opengl/shaderpreprocessor.h>
+#include <filesystem>
 #include <functional>
 #include <string>
-#include <vector>
+#include <string_view>
+#include <type_traits>
 
 namespace ghoul::filesystem { class File; }
 
@@ -60,7 +63,7 @@ public:
     /**
      * The exception that is thrown if the compilation of a ShaderObject failed.
      */
-    struct ShaderCompileError : public ShaderObjectError {
+    struct ShaderCompileError final : public ShaderObjectError {
         /**
          * The constructor constructing a ShaderCompileError containing the cause for the
          * error (\p error) as well as the, optional, \p ident and \p name
@@ -219,20 +222,6 @@ public:
      * \return The filename
      */
     std::filesystem::path filename() const;
-
-    /**
-     * (Re)sets the \p filename this ShaderObject is based on. It will load the contents
-     * of the file and uses it as the source text for this ShaderObject. If the file can
-     * not be opened or is empty an exception is thrown. The loaded shader will not
-     * automatically compiled after loading.
-     *
-     * \param filename The name of the file that will be used to load this shader
-     *
-     * \throw FileNotFoundError If the \p filename did not point to a valid file
-     * \throw ShaderObjectError If the file pointed to by \p filename was empty
-     * \pre \p filename must not be empty
-     */
-    void setFilename(const std::filesystem::path& filename);
 
     /**
      * Rebuild the shader object from file using the file set by setFilename and the

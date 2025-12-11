@@ -26,10 +26,10 @@
 #include <ghoul/io/texture/texturereadercmap.h>
 
 #include <ghoul/format.h>
-#include <ghoul/glm.h>
 #include <ghoul/misc/assert.h>
 #include <ghoul/misc/stringhelper.h>
 #include <ghoul/opengl/texture.h>
+#include <cstdint>
 #include <fstream>
 #include <sstream>
 
@@ -55,7 +55,6 @@ std::unique_ptr<opengl::Texture> TextureReaderCMAP::loadTexture(
 
     int width = 0;
     uint8_t* values = nullptr;
-//    std::vector<uint8_t> values;
 
     std::string line;
     int i = 0;
@@ -69,7 +68,7 @@ std::unique_ptr<opengl::Texture> TextureReaderCMAP::loadTexture(
             continue;
         }
 
-        std::stringstream s(line);
+        std::stringstream s = std::stringstream(line);
         if (!values) {
             s >> width;
             values = new uint8_t[width * 4];
@@ -114,22 +113,10 @@ std::unique_ptr<opengl::Texture> TextureReaderCMAP::loadTexture(
         );
     }
 
-    const GLenum type = [](int d) {
-        switch (d) {
-            case 1: return GL_TEXTURE_1D;
-            case 2: return GL_TEXTURE_2D;
-            case 3: return GL_TEXTURE_3D;
-            default:
-                throw ghoul::RuntimeError(std::format(
-                    "Unsupported dimensionality '{}'", d
-                ));
-        }
-    }(nDimensions);
-
     return std::make_unique<opengl::Texture>(
         values,
-        glm::size3_t(width, 1, 1),
-        type,
+        glm::uvec3(width, 1, 1),
+        GL_TEXTURE_1D,
         opengl::Texture::Format::RGBA
     );
 }
@@ -138,6 +125,37 @@ std::unique_ptr<opengl::Texture> TextureReaderCMAP::loadTexture(void*, size_t, i
 {
     ghoul_assert(false, "Implementation missing");
     return nullptr;
+}
+
+glm::ivec2 TextureReaderCMAP::imageSize(const std::filesystem::path& filename) const {
+    std::ifstream file;
+    file.exceptions(std::ifstream::failbit);
+    file.open(filename, std::ifstream::in);
+    file.exceptions(std::ifstream::goodbit);
+
+    int width = 0;
+
+    std::string line;
+    while (ghoul::getline(file, line)) {
+        // Skip empty lines
+        if (line.empty() || line == "\r") {
+            continue;
+        }
+        // # defines a comment
+        if (line[0] == '#') {
+            continue;
+        }
+
+        std::stringstream s = std::stringstream(line);
+        s >> width;
+        return glm::ivec2(width, 1);
+    }
+
+    throw TextureLoadException(
+        filename,
+        "The first non-comment, non-empty line must contain the image width",
+        this
+    );
 }
 
 std::vector<std::string> TextureReaderCMAP::supportedExtensions() const {

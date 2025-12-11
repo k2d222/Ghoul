@@ -27,6 +27,9 @@
 #define __GHOUL___STACKTRACE___H__
 
 #include <string>
+#ifdef WIN32
+#include <stacktrace>
+#endif // WIN32
 #include <vector>
 
 namespace ghoul {
@@ -34,12 +37,16 @@ namespace ghoul {
 /**
  * Returns the stack trace at the calling site of the function. The vector that is
  * returned contains one line for each level of the stack trace. On Windows, the stack
- * trace is retrieved via StackWalker, whereas Unix and Mac uses the `backtrace_symbols`
- * function.
+ * trace is retrieved via the stacktrace standard library functions, whereas Unix and Mac
+ * uses the `backtrace_symbols` function.
  *
  * \return A list of the full stack trace at the calling site
  */
+#ifdef WIN32
+std::vector<std::string> stackTrace(std::stacktrace trace = std::stacktrace::current());
+#else // ^^^^ WIN32 // !WIN32 vvvv
 std::vector<std::string> stackTrace();
+#endif // WIN32
 
 } // namespace ghoul
 

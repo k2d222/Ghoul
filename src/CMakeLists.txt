@@ -69,6 +69,7 @@ target_sources(
     ${PROJECT_SOURCE_DIR}/include/ghoul/logging/textlog.h
     ${PROJECT_SOURCE_DIR}/include/ghoul/logging/visualstudiooutputlog.h
     ${PROJECT_SOURCE_DIR}/include/ghoul/misc/assert.h
+    ${PROJECT_SOURCE_DIR}/include/ghoul/misc/base64.h
     ${PROJECT_SOURCE_DIR}/include/ghoul/misc/boolean.h
     ${PROJECT_SOURCE_DIR}/include/ghoul/misc/clipboard.h
     ${PROJECT_SOURCE_DIR}/include/ghoul/misc/constexpr.h
@@ -88,6 +89,7 @@ target_sources(
     ${PROJECT_SOURCE_DIR}/include/ghoul/misc/interpolator.h
     ${PROJECT_SOURCE_DIR}/include/ghoul/misc/interpolator.inl
     ${PROJECT_SOURCE_DIR}/include/ghoul/misc/invariants.h
+    ${PROJECT_SOURCE_DIR}/include/ghoul/misc/map.h
     ${PROJECT_SOURCE_DIR}/include/ghoul/misc/managedmemoryuniqueptr.h
     ${PROJECT_SOURCE_DIR}/include/ghoul/misc/memorypool.h
     ${PROJECT_SOURCE_DIR}/include/ghoul/misc/memorypool.inl
@@ -135,6 +137,7 @@ target_sources(
     logging/textlog.cpp
     logging/visualstudiooutputlog.cpp
     misc/assert.cpp
+    misc/base64.cpp
     misc/clipboard.cpp
     misc/crc32.cpp
     misc/csvreader.cpp
@@ -242,7 +245,6 @@ if (GHOUL_MODULE_OPENGL)
       ${PROJECT_SOURCE_DIR}/include/ghoul/io/texture/texturewriter.h
       ${PROJECT_SOURCE_DIR}/include/ghoul/io/texture/texturewriterbase.h
       ${PROJECT_SOURCE_DIR}/include/ghoul/io/texture/texturewriterstb.h
-      opengl/bufferbinding.cpp
       opengl/debugcontext.cpp
       opengl/framebufferobject.cpp
       opengl/openglstatecache.cpp

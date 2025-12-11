@@ -26,9 +26,15 @@
 #include <ghoul/filesystem/cachemanager.h>
 
 #include <ghoul/logging/logmanager.h>
+#include <ghoul/misc/assert.h>
 #include <ghoul/misc/crc32.h>
+#include <ghoul/misc/exception.h>
 #include <ghoul/misc/stringhelper.h>
 #include <fstream>
+#include <map>
+#include <string>
+#include <utility>
+#include <vector>
 
 #ifdef WIN32
 #include <Windows.h>
@@ -43,6 +49,12 @@ namespace {
     const std::filesystem::path CacheFile = "cache";
     constexpr int CacheVersion = 2;
 
+    struct CacheError final : public ghoul::RuntimeError {
+        explicit CacheError(std::string msg)
+            : ghoul::RuntimeError(std::move(msg), "Cache")
+        {}
+    };
+
     using LoadedCacheInfo = std::pair<unsigned long, std::filesystem::path>;
 
     unsigned int generateHash(const std::filesystem::path& file, std::string_view info) {
@@ -56,13 +68,9 @@ namespace {
 
     std::string lastModifiedDate(std::filesystem::path path) {
         if (!std::filesystem::is_regular_file(path)) {
-            throw ghoul::RuntimeError(
-                std::format(
-                    "Error retrieving last-modified date for '{}'. File did not exist",
-                    path
-                ),
-                "Cache"
-            );
+            throw CacheError(std::format(
+                "Error retrieving last-modified date for '{}'. File did not exist", path
+            ));
         }
 #ifdef WIN32
         WIN32_FILE_ATTRIBUTE_DATA infoData;
@@ -85,12 +93,9 @@ namespace {
                 nullptr
             );
             std::string msg(buffer.data());
-            throw ghoul::RuntimeError(
-                std::format(
-                    "Could not retrieve last-modified date for '{}': {}", path, msg
-                ),
-                "Cache"
-            );
+            throw CacheError(std::format(
+                "Could not retrieve last-modified date for '{}': {}", path, msg
+            ));
         }
         else {
             SYSTEMTIME time;
@@ -108,10 +113,9 @@ namespace {
                     nullptr
                 );
                 std::string msg(buffer.data());
-                throw ghoul::RuntimeError(
-                    std::format("'FileTimeToSystemTime' failed for '{}': {}", path, msg),
-                    "Cache"
-                );
+                throw CacheError(std::format(
+                    "'FileTimeToSystemTime' failed for '{}': {}", path, msg
+                ));
             }
             else {
                 return std::format(
@@ -148,14 +152,11 @@ namespace {
             const fs::path parent = e.path().parent_path().parent_path().filename();
 
             if (thisFilename != parent) {
-                throw ghoul::RuntimeError(
-                    std::format(
-                        "File contained in cache directory '{}' contains a file "
-                        "with name '{}' instead of expected '{}'",
-                        path, thisFilename, parent
-                    ),
-                    "Cache"
-                );
+                throw CacheError(std::format(
+                    "File contained in cache directory '{}' contains a file with name "
+                    "'{}' instead of expected '{}'",
+                    path, thisFilename, parent
+                ));
             }
 
             const unsigned long hash = std::stoul(hashName.string());
@@ -174,7 +175,7 @@ CacheManager::CacheManager(std::filesystem::path directory)
     ghoul_assert(std::filesystem::is_directory(_directory), "Directory must exit");
 
     const std::filesystem::path cacheFile = _directory / CacheFile;
-    std::ifstream file(cacheFile);
+    std::ifstream file = std::ifstream(cacheFile);
     if (file.good()) {
         std::string line;
         ghoul::getline(file, line);
@@ -222,10 +223,9 @@ std::filesystem::path CacheManager::cachedFilename(const std::filesystem::path& 
     const std::string n = baseName.string();
     const size_t pos = n.find_first_of("/\\?%*:|\"<>");
     if (pos != std::string::npos) {
-        throw ghoul::RuntimeError(
-            std::format("Argument '{}' contains an illegal character", baseName),
-            "Cache"
-        );
+        throw CacheError(std::format(
+            "Argument '{}' contains an illegal character", baseName
+        ));
     }
 
     std::string lmd;
@@ -279,10 +279,9 @@ bool CacheManager::hasCachedFile(const std::filesystem::path& file,
     const std::string n = baseName.string();
     const size_t pos = n.find_first_of("/\\?%*:|\"<>");
     if (pos != std::string::npos) {
-        throw ghoul::RuntimeError(
-            std::format("Argument '{}' contains an illegal character", baseName),
-            "Cache"
-        );
+        throw CacheError(std::format(
+            "Argument '{}' contains an illegal character", baseName
+        ));
     }
 
     std::string lmd;
@@ -304,10 +303,9 @@ void CacheManager::removeCacheFile(const std::filesystem::path& file,
     const std::string n = baseName.string();
     const size_t pos = n.find_first_of("/\\?%*:|\"<>");
     if (pos != std::string::npos) {
-        throw ghoul::RuntimeError(
-            std::format("Argument '{}' contains an illegal character", baseName),
-            "Cache"
-        );
+        throw CacheError(std::format(
+            "Argument '{}' contains an illegal character", baseName
+        ));
     }
 
     std::string lmd;

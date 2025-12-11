@@ -28,8 +28,6 @@
 
 #include <ghoul/cmdparser/commandlinecommand.h>
 
-#include <vector>
-
 namespace ghoul::cmdparser {
 
 template <typename... T>
@@ -45,7 +43,7 @@ class MultipleCommand : public CommandlineCommand {};
  *
  * \see MultipleCommandZeroArguments
  */
-template<class T>
+template <class T>
 class MultipleCommand<T> : public CommandlineCommand {
 public:
     /**
@@ -102,7 +100,7 @@ protected:
  *
  * \see MultipleCommandZeroArguments
  */
-template<class T, class U>
+template <class T, class U>
 class MultipleCommand<T, U> : public CommandlineCommand {
 public:
     /**
@@ -164,7 +162,7 @@ protected:
  *
  * \see MultipleCommandZeroArguments
  */
-template<class T, class U, class V>
+template <class T, class U, class V>
 class MultipleCommand<T, U, V> : public CommandlineCommand {
 public:
     /**
@@ -230,7 +228,7 @@ protected:
  *
  * \see MultipleCommandZeroArguments
  */
-template<class T, class U, class V, class W>
+template <class T, class U, class V, class W>
 class MultipleCommand<T, U, V, W> : public CommandlineCommand {
 public:
     /**

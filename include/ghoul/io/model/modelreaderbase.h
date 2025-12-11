@@ -26,12 +26,11 @@
 #ifndef __GHOUL___MODELREADERBASE___H__
 #define __GHOUL___MODELREADERBASE___H__
 
-#include <ghoul/io/model/modelgeometry.h>
 #include <ghoul/misc/exception.h>
-#include <ghoul/opengl/ghoul_gl.h>
 #include <filesystem>
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace ghoul::modelgeometry { class ModelGeometry; }
 
@@ -45,7 +44,7 @@ namespace ghoul::io {
 class ModelReaderBase {
 public:
     /// The exception that gets thrown if there was an error loading the Model from file
-    struct ModelLoadException : public RuntimeError {
+    struct ModelLoadException final : public RuntimeError {
         explicit ModelLoadException(std::filesystem::path name, std::string msg,
             const ModelReaderBase* r);
 

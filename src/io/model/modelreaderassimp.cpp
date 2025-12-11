@@ -31,18 +31,27 @@
 #include <ghoul/io/model/modelanimation.h>
 #include <ghoul/io/model/modelgeometry.h>
 #include <ghoul/io/model/modelmesh.h>
+#include <ghoul/io/model/modelnode.h>
+#include <ghoul/io/model/modelreaderbase.h>
 #include <ghoul/io/texture/texturereader.h>
 #include <ghoul/io/texture/texturereaderbase.h>
 #include <ghoul/logging/logmanager.h>
 #include <ghoul/misc/assert.h>
 #include <ghoul/opengl/ghoul_gl.h>
-#include <assimp/scene.h>
+#include <assimp/anim.h>
+#include <assimp/color4.h>
 #include <assimp/Importer.hpp>
+#include <assimp/material.h>
+#include <assimp/mesh.h>
 #include <assimp/postprocess.h>
-#include <filesystem>
-#include <fstream>
-#include <memory>
-#include <vector>
+#include <assimp/scene.h>
+#include <assimp/texture.h>
+#include <assimp/types.h>
+#include <algorithm>
+#include <cstdlib>
+#include <limits>
+#include <string_view>
+#include <utility>
 
 namespace {
     constexpr std::string_view _loggerCat = "ModelReaderAssimp";
@@ -594,20 +603,20 @@ namespace {
 
         // Check animations
         if (scene.HasAnimations()) {
-            for (unsigned int a = 0; a < scene.mNumAnimations; ++a) {
+            for (unsigned int a = 0; a < scene.mNumAnimations; a++) {
                 aiAnimation* animation = scene.mAnimations[a];
                 if (modelAnimation->name() != animation->mName.C_Str()) {
                     continue;
                 }
 
-                for (unsigned int c = 0; c < animation->mNumChannels; ++c) {
+                for (unsigned int c = 0; c < animation->mNumChannels; c++) {
                     aiNodeAnim* nodeAnim = animation->mChannels[c];
 
                     if (nodeAnim->mNodeName == node.mName) {
                         ModelAnimation::NodeAnimation nodeAnimation;
                         nodeAnimation.node = newNode;
 
-                        for (unsigned int p = 0; p < nodeAnim->mNumPositionKeys; ++p) {
+                        for (unsigned int p = 0; p < nodeAnim->mNumPositionKeys; p++) {
                             const aiVectorKey posKey = nodeAnim->mPositionKeys[p];
 
                             ModelAnimation::PositionKeyframe positionKf;
@@ -624,7 +633,7 @@ namespace {
                             nodeAnimation.positions.push_back(std::move(positionKf));
                         }
 
-                        for (unsigned int r = 0; r < nodeAnim->mNumRotationKeys; ++r) {
+                        for (unsigned int r = 0; r < nodeAnim->mNumRotationKeys; r++) {
                             const aiQuatKey rotKey = nodeAnim->mRotationKeys[r];
 
                             ModelAnimation::RotationKeyframe rotationKf;
@@ -642,7 +651,7 @@ namespace {
                             nodeAnimation.rotations.push_back(std::move(rotationKf));
                         }
 
-                        for (unsigned int s = 0; s < nodeAnim->mNumScalingKeys; ++s) {
+                        for (unsigned int s = 0; s < nodeAnim->mNumScalingKeys; s++) {
                             const aiVectorKey scaleKey = nodeAnim->mScalingKeys[s];
 
                             ModelAnimation::ScaleKeyframe scaleKeyframe;

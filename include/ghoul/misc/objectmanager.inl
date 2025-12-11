@@ -26,6 +26,7 @@
 #include <ghoul/format.h>
 #include <ghoul/misc/assert.h>
 #include <ghoul/logging/logmanager.h>
+#include <utility>
 
 namespace ghoul {
 
@@ -95,7 +96,7 @@ T* ObjectManager<T>::request(const std::string& name,
     }
     else {
         // If we found the name, we increase the reference counter and return the pointer
-        ++(it->second.refCount);
+        (it->second.refCount)++;
         return it->second.object.get();
     }
 }

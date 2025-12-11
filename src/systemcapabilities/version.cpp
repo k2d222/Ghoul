@@ -25,8 +25,10 @@
 
 #include <ghoul/systemcapabilities/version.h>
 
+#include <ghoul/format.h>
+
 namespace {
-    unsigned int packVersion(int major, int minor, int release) {
+    constexpr unsigned int packVersion(int major, int minor, int release) {
         // safe since: 2^8 * 1000 * 1000 < 2^32
         return major * 1000 * 1000  +  minor * 1000  +  release;
     }

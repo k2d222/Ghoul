@@ -26,7 +26,6 @@
 #include <ghoul/io/model/modelreader.h>
 
 #include <ghoul/filesystem/cachemanager.h>
-#include <ghoul/filesystem/file.h>
 #include <ghoul/filesystem/filesystem.h>
 #include <ghoul/format.h>
 #include <ghoul/io/model/modelreaderbase.h>
@@ -36,7 +35,9 @@
 #include <ghoul/misc/profiling.h>
 #include <ghoul/misc/stringhelper.h>
 #include <algorithm>
-#include <filesystem>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace {
     constexpr std::string_view _loggerCat = "ModelReader";

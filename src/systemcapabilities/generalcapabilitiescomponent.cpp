@@ -27,11 +27,11 @@
 
 #include <ghoul/format.h>
 #include <ghoul/logging/logmanager.h>
-#include <ghoul/misc/assert.h>
-#include <algorithm>
 #include <array>
+#include <cstring>
+#include <exception>
 #include <sstream>
-#include <string>
+#include <utility>
 
 #ifdef WIN32
 #include <intrin.h>
@@ -41,16 +41,16 @@
 #pragma comment(lib, "Kernel32.lib")
 typedef void (WINAPI* PGNSI)(LPSYSTEM_INFO);
 typedef BOOL (WINAPI *PGPI)(DWORD, DWORD, DWORD, DWORD, DWORD);
-#else
+#else // ^^^^ WIN32 // !WIN32 vvvv
 #ifdef __APPLE__
 #include <sys/sysctl.h>
-#else
+#else // ^^^^ __APPLE__ // !__APPLE__vvvv
 #include <sys/types.h>
 #include <sys/sysinfo.h>
 #include <cstring>
-#endif
+#endif // __APPLE__
 #include <sys/utsname.h>
-#endif
+#endif // WIN32
 
 namespace ghoul {
 
@@ -377,6 +377,8 @@ void GeneralCapabilitiesComponent::detectMemory() {
 void GeneralCapabilitiesComponent::detectCPU() {
     // @TODO This function needs cleanup ---abock
 #ifdef WIN32
+
+#ifndef _M_ARM64
     constexpr std::array<std::string_view, 32> szFeatures = {
         "fpu", "vme", "de", "pse", "tsc", "msr", "pae", "mce", "cx8", "apic", "Unknown1",
         "sep", "mtrr", "pge", "mca", "cmov", "pat", "pse36", "psn", "clflush", "Unknown2",
@@ -474,6 +476,13 @@ void GeneralCapabilitiesComponent::detectCPU() {
     SYSTEM_INFO systemInfo;
     GetNativeSystemInfo(&systemInfo);
     _cores = systemInfo.dwNumberOfProcessors;
+#else // // ^^^^ WIN32 // _M_ARM64 vvvv
+    _cpu = "arm64";
+
+    SYSTEM_INFO systemInfo;
+    GetNativeSystemInfo(&systemInfo);
+    _cores = systemInfo.dwNumberOfProcessors;
+#endif // _M_ARM64
 #elif defined(__APPLE__)
     int mib[2];
     size_t len = 512;
@@ -563,7 +572,7 @@ void GeneralCapabilitiesComponent::detectCPU() {
     if (file) {
         while (fgets(line, maxSize, file) != nullptr) {
             if (strncmp(line, "processor", 9) == 0) {
-                ++_cores;
+                _cores++;
             }
             if (strncmp(line, "model name", 10) == 0) {
                 _cpu = line;

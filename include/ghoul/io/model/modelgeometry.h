@@ -26,12 +26,14 @@
 #ifndef __GHOUL___MODELGEOMETRY___H__
 #define __GHOUL___MODELGEOMETRY___H__
 
+#include <ghoul/misc/exception.h>
 #include <ghoul/io/model/modelanimation.h>
-#include <ghoul/io/model/modelmesh.h>
 #include <ghoul/io/model/modelnode.h>
-#include <ghoul/opengl/ghoul_gl.h>
+#include <ghoul/opengl/texture.h>
 #include <filesystem>
 #include <memory>
+#include <string>
+#include <vector>
 
 namespace ghoul::opengl { class ProgramObject; }
 
@@ -41,7 +43,7 @@ class ModelGeometry {
 public:
     /// The exception that gets thrown if there was an error loading the cache file or
     /// saving this model to a cache file
-    struct ModelCacheException : public RuntimeError {
+    struct ModelCacheException final : public RuntimeError {
         explicit ModelCacheException(std::filesystem::path file, std::string msg);
 
         /// The file that caused the exception to be thrown

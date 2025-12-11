@@ -23,23 +23,24 @@
  * OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                                         *
  ****************************************************************************************/
 
-#include <ghoul/opengl/bufferbinding.h>
+#ifndef __GHOUL___BASE64___H__
+#define __GHOUL___BASE64___H__
 
-namespace ghoul::opengl {
+#include <cstdint>
+#include <string_view>
+#include <vector>
 
-template <>
-unsigned int BufferBinding<bufferbinding::Buffer::AtomicCounter>::maxBufferBindings() {
-    return OpenGLCap.maxAtomicCounterBufferBindings();
-}
+namespace ghoul {
 
-template <>
-unsigned int BufferBinding<bufferbinding::Buffer::ShaderStorage>::maxBufferBindings() {
-    return OpenGLCap.maxShaderStorageBufferBindings();
-}
+/**
+ * Decodes a Base64-encoded string. This function takes a Base64-encoded input string and
+ * returns the decoded data as a vector of bytes.
+ *
+ * \param base64 The Base64-encoded input string.
+ * \return A vector containing the decoded bytes.
+ */
+std::vector<uint8_t> decodeBase64(std::string_view base64);
 
-template <>
-unsigned int BufferBinding<bufferbinding::Buffer::Uniform>::maxBufferBindings() {
-    return OpenGLCap.maxUniformBufferBindings();
-}
+} // namespace ghoul
 
-} // namespace ghoul::opengl
+#endif // __GHOUL___BASE64___H__

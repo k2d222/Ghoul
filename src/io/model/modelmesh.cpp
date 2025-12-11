@@ -25,13 +25,14 @@
 
 #include <ghoul/io/model/modelmesh.h>
 
-#include <ghoul/filesystem/filesystem.h>
-#include <ghoul/format.h>
-#include <ghoul/io/texture/texturereader.h>
 #include <ghoul/logging/logmanager.h>
+#include <ghoul/misc/assert.h>
 #include <ghoul/misc/profiling.h>
 #include <ghoul/opengl/programobject.h>
 #include <ghoul/opengl/textureunit.h>
+#include <cstddef>
+#include <string>
+#include <utility>
 
 namespace {
     std::string textureTypeToString(const ghoul::io::ModelMesh::TextureType& type) {
@@ -66,14 +67,14 @@ void ModelMesh::generateDebugTexture(ModelMesh::Texture& texture) {
     texture.type = ModelMesh::TextureType::ColorDiffuse;
 }
 
-void ModelMesh::render(opengl::ProgramObject& program, const glm::mat4x4& meshTransform,
+void ModelMesh::render(opengl::ProgramObject& program, const glm::mat4& meshTransform,
                        bool isFullyTexturedModel, bool isProjection) const
 {
     // Count how many textures have image textures
     int counter = 0;
     for (const Texture& texture : _textures) {
         if (texture.hasTexture) {
-            ++counter;
+            counter++;
         }
     }
 
@@ -123,7 +124,7 @@ void ModelMesh::render(opengl::ProgramObject& program, const glm::mat4x4& meshTr
                     texture.texture->bind();
 
                     // Advance the texture unit index
-                    ++textureUnitIndex;
+                    textureUnitIndex++;
                 }
                 // Use embedded simple colors instead of textures
                 else {
@@ -162,7 +163,7 @@ void ModelMesh::render(opengl::ProgramObject& program, const glm::mat4x4& meshTr
                         texture.texture->bind();
 
                         // Advance the texture unit index
-                        ++textureUnitIndex;
+                        textureUnitIndex++;
                         break;
                     }
                     // Use embedded simple colors instead of textures
@@ -195,7 +196,7 @@ void ModelMesh::render(opengl::ProgramObject& program, const glm::mat4x4& meshTr
     glActiveTexture(GL_TEXTURE0);
 }
 
-float ModelMesh::calculateBoundingRadius(glm::mat4x4& transform) const {
+float ModelMesh::calculateBoundingRadius(glm::mat4& transform) const {
     // Calculate the bounding sphere of the mesh
     float maximumDistanceSquared = 0.f;
     for (const Vertex& v : _vertices) {
@@ -338,14 +339,14 @@ void ModelMesh::initialize() {
         switch (texture.type) {
             case TextureType::TextureDiffuse:
             case TextureType::ColorDiffuse:
-                ++nDiffuse;
+                nDiffuse++;
                 break;
             case TextureType::TextureSpecular:
             case TextureType::ColorSpecular:
-                ++nSpecular;
+                nSpecular++;
                 break;
             case TextureType::TextureNormal:
-                ++nNormal;
+                nNormal++;
                 break;
         }
 

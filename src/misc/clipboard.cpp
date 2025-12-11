@@ -27,8 +27,8 @@
 
 #include <ghoul/misc/exception.h>
 #include <ghoul/format.h>
-#include <algorithm>
-#include <sstream>
+#include <cstring>
+#include <memory>
 
 #ifdef WIN32
 #include <Windows.h>
@@ -97,14 +97,36 @@ std::string clipboardText() {
     return "";
 #else
     std::string text;
-    if (exec("xclip -o -sel c -f", text)) {
-        return text.substr(0, text.length());  // remove a line ending
+    // Try UTF8_STRING first
+    if (exec("xclip -o -selection clipboard -target UTF8_STRING", text)) {
+        if (!text.empty() && text.back() == '\n') {
+            text.pop_back();
+        }
+        return text;
     }
+
+    // Fallback: try text/plain;charset=utf-8
+    if (exec("xclip -o -selection clipboard -target text/plain;charset=utf-8", text)) {
+        if (!text.empty() && text.back() == '\n') {
+            text.pop_back();
+        }
+        return text;
+    }
+
+    // Final fallback: default text/plain
+    if (exec("xclip -o -selection clipboard -target text/plain", text)) {
+        if (!text.empty() && text.back() == '\n') {
+            text.pop_back();
+        }
+        return text;
+    }
+
+    // If all else fails
     return "";
 #endif
 }
 
-void setClipboardText(const std::string& text) {
+void setClipboardText(std::string_view text) {
 #ifdef WIN32
     HANDLE hData = GlobalAlloc(GMEM_MOVEABLE | GMEM_DDESHARE, text.length() + 1);
     if (!hData) {
@@ -116,7 +138,8 @@ void setClipboardText(const std::string& text) {
         GlobalFree(hData);
         throw RuntimeError("Error acquiring lock", "Clipboard");
     }
-    std::memcpy(ptrData, text.c_str(), text.length() + 1);
+    std::memset(ptrData, 0, text.length() + 1);
+    std::memcpy(ptrData, text.data(), text.length());
 
     GlobalUnlock(hData);
 

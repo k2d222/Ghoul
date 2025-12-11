@@ -27,10 +27,6 @@
 #define __GHOUL___MODELREADER___H__
 
 #include <ghoul/misc/exception.h>
-#include <filesystem>
-#include <memory>
-#include <string>
-#include <vector>
 
 namespace ghoul::modelgeometry { class ModelGeometry; }
 
@@ -50,7 +46,7 @@ public:
     BooleanType(NotifyInvisibleDropped);
 
     /// Exception that gets thrown when there is no reader for the provided \p extension
-    struct MissingReaderException : public RuntimeError {
+    struct MissingReaderException final : public RuntimeError {
         explicit MissingReaderException(std::string extension,
             std::filesystem::path file_);
 

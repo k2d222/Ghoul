@@ -30,8 +30,8 @@
 #include <ghoul/misc/assert.h>
 #include <ghoul/misc/profiling.h>
 #include <algorithm>
-#include <map>
-#include <vector>
+#include <type_traits>
+#include <utility>
 
 namespace {
     // The always-present console log. Definining it here as we'd other need to include
@@ -121,7 +121,7 @@ void LogManager::logMessage(LogLevel level, std::string_view category,
         }
 
         const int l = std::underlying_type_t<LogLevel>(level);
-        ++(_logCounters[l]);
+        (_logCounters[l])++;
     }
 }
 

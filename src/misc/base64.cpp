@@ -23,25 +23,80 @@
  * OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                                         *
  ****************************************************************************************/
 
-#include <ghoul/misc/exception.h>
+#include <ghoul/misc/base64.h>
 
-#include <ghoul/format.h>
-#include <ghoul/misc/assert.h>
-#include <utility>
+#include <array>
 
 namespace ghoul {
 
-RuntimeError::RuntimeError(std::string msg, std::string comp)
-    : std::runtime_error(comp.empty() ? msg : std::format("({}) {}", comp, msg))
-    , message(std::move(msg))
-    , component(std::move(comp))
-{
-    ghoul_assert(!message.empty(), "Message must not be empty");
-}
+std::vector<uint8_t> decodeBase64(std::string_view base64) {
+    // Implementation of this function based on:
+    // 1. https://renenyffenegger.ch/notes/development/Base64/Encoding-and-decoding-base
+    //    64-with-cpp/
+    // 2. https://stackoverflow.com/a/180949
 
-FileNotFoundError::FileNotFoundError(std::filesystem::path f, std::string comp)
-    : RuntimeError(std::format("Could not find file '{}'", f), std::move(comp))
-    , file(std::move(f))
-{}
+    constexpr std::string_view base64Chars =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        "abcdefghijklmnopqrstuvwxyz"
+        "0123456789+/";
+
+    auto isBase64 = [](unsigned char c) {
+        return (isalnum(c) || (c == '+') || (c == '/'));
+    };
+
+    int inLen = static_cast<int>(base64.size());
+    int i = 0;
+    int j = 0;
+    int in_ = 0;
+    std::array<unsigned char, 4> char4;
+    std::array<unsigned char, 3> char3;
+    std::vector<uint8_t> ret;
+
+    while (inLen-- && ( base64[in_] != '=') && isBase64(base64[in_])) {
+        char4[i++] = base64[in_];
+        in_++;
+
+        if (i == 4) {
+            for (i = 0; i < 4; i++) {
+                char4[i] = static_cast<unsigned char>(base64Chars.find(char4[i]));
+            }
+
+            char3[0] = static_cast<unsigned char>(
+                (char4[0] << 2) + ((char4[1] & 0x30) >> 4)
+            );
+            char3[1] = static_cast<unsigned char>(
+                ((char4[1] & 0xf) << 4) + ((char4[2] & 0x3c) >> 2)
+            );
+            char3[2] = static_cast<unsigned char>(((char4[2] & 0x3) << 6) + char4[3]);
+
+            for (i = 0; (i < 3); i++) {
+                ret.push_back(char3[i]);
+            }
+            i = 0;
+        }
+    }
+
+    if (i != 0) {
+        for (j = i; j < 4; j++) {
+            char4[j] = 0;
+        }
+
+        for (j = 0; j < 4; j++) {
+            char4[j] = static_cast<unsigned char>(base64Chars.find(char4[j]));
+        }
+
+        char3[0] = static_cast<unsigned char>((char4[0] << 2) + ((char4[1] & 0x30) >> 4));
+        char3[1] = static_cast<unsigned char>(
+            ((char4[1] & 0xf) << 4) + ((char4[2] & 0x3c) >> 2)
+        );
+        char3[2] = static_cast<unsigned char>(((char4[2] & 0x3) << 6) + char4[3]);
+
+        for (j = 0; (j < i - 1); j++) {
+            ret.push_back(char3[j]);
+        }
+    }
+
+    return ret;
+}
 
 } // namespace ghoul
