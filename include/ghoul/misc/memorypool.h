@@ -3,7 +3,7 @@
  * GHOUL                                                                                 *
  * General Helpful Open Utility Library                                                  *
  *                                                                                       *
- * Copyright (c) 2012-2025                                                               *
+ * Copyright (c) 2012-2026                                                               *
  *                                                                                       *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this  *
  * software and associated documentation files (the "Software"), to deal in the Software *
@@ -64,7 +64,7 @@ public:
      *
      * \param nBuckets the number of buckets that should be created at creation time
      */
-    MemoryPool(int nBuckets = 1);
+    explicit MemoryPool(int nBuckets = 1);
 
     /**
      * Frees the memory that was allocated during the existence of this MemoryPool.
@@ -141,7 +141,7 @@ public:
      *
      * \param nBuckets the number of buckets that should be created at creation time
      */
-    ReusableTypedMemoryPool(int nBuckets = 1);
+    explicit ReusableTypedMemoryPool(int nBuckets = 1);
 
     /**
      * Frees the memory that was allocated during the existence of this MemoryPool or the

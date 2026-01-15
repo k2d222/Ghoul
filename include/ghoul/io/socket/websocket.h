@@ -3,7 +3,7 @@
  * GHOUL                                                                                 *
  * General Helpful Open Utility Library                                                  *
  *                                                                                       *
- * Copyright (c) 2012-2025                                                               *
+ * Copyright (c) 2012-2026                                                               *
  *                                                                                       *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this  *
  * software and associated documentation files (the "Software"), to deal in the Software *
@@ -28,6 +28,13 @@
 
 #include <ghoul/io/socket/socket.h>
 
+#include <condition_variable>
+#include <deque>
+#include <memory>
+#include <mutex>
+#include <set>
+#include <sstream>
+
 #ifdef WIN32
 #pragma warning(push)
 #pragma warning(disable: 4244 4267)
@@ -41,13 +48,6 @@
 #ifdef WIN32
 #pragma warning(pop)
 #endif // WIN32
-
-#include <condition_variable>
-#include <deque>
-#include <memory>
-#include <mutex>
-#include <set>
-#include <sstream>
 
 namespace ghoul::io {
 

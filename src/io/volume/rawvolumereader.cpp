@@ -3,7 +3,7 @@
  * GHOUL                                                                                 *
  * General Helpful Open Utility Library                                                  *
  *                                                                                       *
- * Copyright (c) 2012-2025                                                               *
+ * Copyright (c) 2012-2026                                                               *
  *                                                                                       *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this  *
  * software and associated documentation files (the "Software"), to deal in the Software *
@@ -25,10 +25,13 @@
 
 #include <ghoul/io/volume/rawvolumereader.h>
 
-#include <ghoul/logging/logmanager.h>
 #include <ghoul/format.h>
+#include <ghoul/logging/logmanager.h>
+#include <ghoul/opengl/texture.h>
 #include <fstream>
 #include <string_view>
+#include <string>
+#include <utility>
 
 namespace {
     constexpr std::string_view _loggerCat = "RawVolumeReader";
